@@ -124,7 +124,9 @@ const drawSegment = (canvas, st, ed, type, top, height, sessData, zIndex, curren
         }
 
         // Add flag only on main part (not continuation)
-        const flagHtml = !isSplitContinuation ? `<div class="session-flag flag-left"><img src="assets/${sessData.flag}" alt="${sessData.name} Flag" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"></div>` : '';
+        // Utiliser un chemin absolu depuis la racine afin d'éviter les erreurs de résolution
+        // sur des environnements de déploiement (Vercel, Netlify, etc.).
+        const flagHtml = !isSplitContinuation ? `<div class="session-flag flag-left"><img src="/assets/${sessData.flag}" alt="${sessData.name} Flag" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"></div>` : '';
 
         bar.innerHTML = `
           ${flagHtml}
