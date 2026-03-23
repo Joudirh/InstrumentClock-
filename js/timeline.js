@@ -8,16 +8,31 @@ export const renderForexTimeline = (containerEl, forexSessions, targetTz, season
   const canvas = document.createElement('div');
   canvas.className = 'timeline-canvas';
   
+  // Create inner grid for left/right padding
+  const grid = document.createElement('div');
+  grid.className = 'timeline-grid';
+  grid.style.position = 'absolute';
+  grid.style.top = '0';
+  grid.style.bottom = '0';
+  grid.style.left = '40px';
+  grid.style.right = '40px';
+  canvas.appendChild(grid);
+  
   // Background ticks
   const timeAxis = document.createElement('div');
   timeAxis.className = 'time-axis';
-  for (let i = 0; i < 24; i++) {
+  // Also extend timeAxis perfectly inside the grid
+  timeAxis.style.left = '0';
+  timeAxis.style.width = '100%';
+
+  for (let i = 0; i <= 24; i++) {
     const tick = document.createElement('div');
     tick.className = 'time-tick';
-    tick.textContent = `${i.toString().padStart(2, '0')}h`;
+    tick.style.left = `${(i / 24) * 100}%`;
+    tick.textContent = `${i.toString().padStart(2, '0')}:00`;
     timeAxis.appendChild(tick);
   }
-  canvas.appendChild(timeAxis);
+  grid.appendChild(timeAxis);
 
   // Compute intervals
   const computedSessions = forexSessions.map(sess => {
@@ -58,64 +73,87 @@ export const renderForexTimeline = (containerEl, forexSessions, targetTz, season
     }
   }
 
-  // Draw Overlaps (Background pattern)
+  // Draw Patterns (Overlaps)
   overlapPeriods.forEach(p => {
-    drawSegment(canvas, p.st, p.ed, 'pattern-box', 20, 100, '', -1);
+    drawSegment(grid, p.st, p.ed, 'pattern-box', 20, 380, '', -1, 0);
   });
+
+  const now = DateTime.now().setZone(targetTz);
+  const currentDec = now.hour + now.minute / 60 + now.second / 3600;
 
   // Draw Sessions
   computedSessions.forEach(sess => {
-    drawSegment(canvas, sess.st, sess.ed, sess.color, sess.yOffset + 25, 20, sess.name, 10);
+    drawSegment(grid, sess.st, sess.ed, 'capsule', sess.yOffset + 35, 50, sess, 10, currentDec);
   });
 
-  // Draw Current Local Time indicator (if we are displaying current time)
-  // Actually, we show the current time in the target timezone!
-  const now = DateTime.now().setZone(targetTz);
-  const currentDec = now.hour + now.minute / 60;
+  // Draw Current Local Time indicator
+  // now and currentDec were calculated just before the sess Loop
   
   const currentLine = document.createElement('div');
   currentLine.className = 'current-time-line';
   currentLine.style.left = `${(currentDec / 24) * 100}%`;
+  currentLine.style.transform = 'translateX(-50%)';
   currentLine.title = `Heure actuelle: ${now.toFormat('HH:mm')} (${targetTz})`;
-  canvas.appendChild(currentLine);
+  grid.appendChild(currentLine);
 
   containerEl.appendChild(canvas);
 };
 
-const drawSegment = (canvas, st, ed, bgVar, top, height, text, zIndex) => {
-  const isPattern = bgVar === 'pattern-box';
+const drawSegment = (canvas, st, ed, type, top, height, sessData, zIndex, currentDec) => {
+  const isPattern = type === 'pattern-box';
   
-  const createBar = (l, w) => {
+  const createBar = (l, w, isSplitContinuation = false) => {
     const bar = document.createElement('div');
     bar.className = 'session-bar';
+    
     if (isPattern) {
         bar.className += ' pattern-box';
         bar.style.opacity = '0.4';
+        bar.style.background = 'repeating-linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.2) 5px, rgba(0,0,0,0.1) 5px, rgba(0,0,0,0.1) 10px)';
+        bar.style.backgroundColor = '#666';
     } else {
-        bar.style.background = bgVar;
+        const isOpen = isTimeInPeriod(currentDec, st, ed);
+        bar.classList.add(isOpen ? 'is-open' : 'is-closed');
+        
+        let statusText = '';
+        if (isOpen) {
+           // simple string for now, will dynamic update if needed
+           statusText = 'OUVERT'; 
+        } else {
+           statusText = `From ${formatTime(st)} To ${formatTime(ed)}`;
+        }
+
+        // Add flag only on main part (not continuation)
+        const flagHtml = !isSplitContinuation ? `<div class="session-flag flag-left"><img src="assets/${sessData.flag}" alt="${sessData.name} Flag" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"></div>` : '';
+
+        bar.innerHTML = `
+          ${flagHtml}
+          <div class="capsule-header">${sessData.name}</div>
+          <div class="capsule-body">${statusText}</div>
+        `;
     }
+    
     bar.style.top = `${top}px`;
-    bar.style.height = `${height}px`;
+    if (isPattern) {
+        bar.style.height = `${height}px`;
+    } // capsules have fixed CSS height
+    
     bar.style.left = `${l}%`;
     bar.style.width = `${w}%`;
     bar.style.zIndex = zIndex;
     
-    if (text) {
-        bar.textContent = text;
-        bar.title = `${text} (${formatTime(Math.round(st))} - ${formatTime(Math.round(ed))})`;
+    if (sessData && sessData.name) {
+        bar.title = `${sessData.name} (${formatTime(Math.round(st))} - ${formatTime(Math.round(ed))})`;
     }
     canvas.appendChild(bar);
   };
 
   if (st < ed) {
-    // Normal interval (e.g. 8 to 17)
     createBar((st / 24) * 100, ((ed - st) / 24) * 100);
   } else {
-    // Wrap around interval (e.g. 21 to 6)
-    // Draw st to 24
+    // intervalle coupé
     createBar((st / 24) * 100, ((24 - st) / 24) * 100);
-    // Draw 0 to ed
-    createBar(0, (ed / 24) * 100);
+    createBar(0, (ed / 24) * 100, true);
   }
 };
 

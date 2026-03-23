@@ -1,14 +1,16 @@
 import { forexSessions, instrumentCategories } from './data.js';
 import { renderForexTimeline } from './timeline.js';
-import { renderInstruments, renderTimezoneOptions, renderCategoryFilters } from './ui.js';
+import { renderInstruments, renderTimezoneOptions, renderCategoryFilters, renderWorldClocks } from './ui.js';
 import { timezonesList, getLocalTimezone } from './timezone.js';
+import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
 
 // --- State ---
 const AppState = {
   season: 'winter', // 'winter' | 'summer'
   timezone: 'auto', // 'auto' or a timezone ID like 'Europe/Paris'
   resolvedTimezone: getLocalTimezone(),
-  category: 'all' // 'all' or category ID
+  category: 'all', // 'all' or category ID
+  status: 'all' // 'all', 'open', 'closed'
 };
 
 // --- DOM Elements ---
@@ -18,8 +20,12 @@ const themeToggle = document.getElementById('theme-toggle');
 const forexTimeline = document.getElementById('forex-timeline');
 const instrumentsContainer = document.getElementById('instruments-container');
 const categoryTabs = document.getElementById('category-tabs');
+const statusSelector = document.getElementById('status-selector');
 const iconSun = document.getElementById('icon-sun');
 const iconMoon = document.getElementById('icon-moon');
+const clockTime = document.getElementById('clock-time');
+const clockDate = document.getElementById('clock-date');
+const worldClocksContainer = document.getElementById('world-clocks-container');
 
 // --- Initialization ---
 const init = () => {
@@ -59,6 +65,7 @@ const init = () => {
   // Add event listeners
   seasonSelector.addEventListener('change', handleSeasonChange);
   timezoneSelector.addEventListener('change', handleTimezoneChange);
+  statusSelector.addEventListener('change', handleStatusChange);
   themeToggle.addEventListener('click', handleThemeToggle);
 
   // Global function for UI updates
@@ -72,6 +79,10 @@ const init = () => {
 
   // Initial render
   renderAll();
+  
+  // Setup system clock
+  updateClock();
+  setInterval(updateClock, 1000);
   
   // Timer for current time indicator (update every minute)
   setInterval(() => {
@@ -90,6 +101,11 @@ const handleTimezoneChange = (e) => {
   AppState.timezone = e.target.value;
   localStorage.setItem('timezone', AppState.timezone);
   AppState.resolvedTimezone = AppState.timezone === 'auto' ? getLocalTimezone() : AppState.timezone;
+  renderAll();
+};
+
+const handleStatusChange = (e) => {
+  AppState.status = e.target.value;
   renderAll();
 };
 
@@ -117,7 +133,19 @@ const renderAll = () => {
   renderCategoryFilters(categoryTabs, instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  renderInstruments(instrumentsContainer, AppState.resolvedTimezone, AppState.season, AppState.category);
+  renderInstruments(instrumentsContainer, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status);
+};
+
+const updateClock = () => {
+  // Use the user's localized time based on AppState.resolvedTimezone 
+  // so the clock matches the chosen timezone dynamically!
+  const now = DateTime.now().setZone(AppState.resolvedTimezone);
+  
+  clockTime.textContent = now.toFormat('HH:mm:ss');
+  clockDate.textContent = now.setLocale(navigator.language).toFormat('EEEE d MMMM yyyy');
+  
+  // Call the world clocks update here since it runs every second !
+  renderWorldClocks(worldClocksContainer, forexSessions);
 };
 
 // --- Utils ---

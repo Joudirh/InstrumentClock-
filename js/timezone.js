@@ -30,26 +30,37 @@ export const getLocalTimezone = () => {
 // en tenant compte de la saison sélectionnée.
 export const convertHour = (hourDecimal, sourceTz, targetTz, seasonKey) => {
   const referenceDateStr = seasons[seasonKey];
-  // Construire la date de base dans le fuseau source, à l'heure indiquée
-  // Ex: market = America/New_York, hour = 9.5 (9h30)
-  
   const h = Math.floor(hourDecimal);
   const m = Math.round((hourDecimal - h) * 60);
   
   let sourceDate = DateTime.fromISO(referenceDateStr).setZone(sourceTz);
   sourceDate = sourceDate.set({ hour: h, minute: m, second: 0, millisecond: 0 });
 
-  // Convertir dans la cible
   const targetDate = sourceDate.setZone(targetTz);
-  
-  // Retourner l'heure sous format décimal dans le repère cible (ex: 22.5 = 22h30)
-  // Attention au cas où l'heure passe au jour suivant/précédent :
-  // Le decallage peut être de plusieurs jours pour Sydney -> LA.
-  // Pour une timeline 24h, on se concentre sur l'heure de la journée (0-24)
-  // Mais il est crucial de garder un format décimal.
-  
   return targetDate.hour + targetDate.minute / 60;
 };
+
+// Convertit un Jour et une Heure
+export const convertDayHour = (dayN, hourDecimal, sourceTz, targetTz, seasonKey) => {
+  const referenceDateStr = seasons[seasonKey]; // Lundi par défaut dans la DB (2024-01-15 est un Lundi)
+  const h = Math.floor(hourDecimal);
+  const m = Math.round((hourDecimal - h) * 60);
+  
+  let sourceDate = DateTime.fromISO(referenceDateStr).setZone(sourceTz);
+  sourceDate = sourceDate.set({ weekday: dayN, hour: h, minute: m, second: 0, millisecond: 0 });
+
+  const targetDate = sourceDate.setZone(targetTz);
+  return {
+    day: targetDate.weekday,
+    hourDec: targetDate.hour + targetDate.minute / 60
+  };
+};
+
+const DAY_NAMES = {
+  1: "Lun", 2: "Mar", 3: "Mer", 4: "Jeu", 5: "Ven", 6: "Sam", 7: "Dim"
+};
+
+export const getDayName = (dayNumber) => DAY_NAMES[dayNumber];
 
 export const formatTime = (hourDecimal) => {
   if (hourDecimal === 24) return "00:00";

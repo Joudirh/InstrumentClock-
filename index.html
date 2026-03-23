@@ -18,6 +18,11 @@
         <p class="subtitle">Horaires & Liquidités Mondiales</p>
       </div>
       
+      <div id="system-clock" class="system-clock">
+        <div id="clock-time" class="clock-time">00:00:00</div>
+        <div id="clock-date" class="clock-date">Chargement...</div>
+      </div>
+      
       <div class="controls-area">
         <label class="control-group">
           <span>Saison</span>
@@ -58,10 +63,24 @@
       <div class="timeline-container scroll-x" id="forex-timeline">
         <!-- Rendu dynamique de la timeline Forex -->
       </div>
+      
+      <div id="world-clocks-container" class="world-clocks-bar">
+        <!-- Rempli dynamiquement -->
+      </div>
     </section>
 
-    <div class="category-filters" id="category-tabs">
-        <!-- Rempli dynamiquement -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+      <div class="category-filters" id="category-tabs" style="flex: 1; margin-bottom: 0;">
+          <!-- Rempli dynamiquement -->
+      </div>
+      
+      <div class="status-filter">
+        <select id="status-selector" aria-label="Filtrer par statut" style="padding: 0.5rem 1rem; border-radius: 20px; font-weight: 500;">
+          <option value="all">🔍 Tous les statuts</option>
+          <option value="open">🟢 Ouverts</option>
+          <option value="closed">🔴 Fermés</option>
+        </select>
+      </div>
     </div>
 
     <section class="instruments-section card" >
