@@ -29,7 +29,7 @@ export const renderForexTimeline = (containerEl, forexSessions, targetTz, season
     const tick = document.createElement('div');
     tick.className = 'time-tick';
     tick.style.left = `${(i / 24) * 100}%`;
-    tick.textContent = `${i.toString().padStart(2, '0')}:00`;
+    tick.textContent = i.toString().padStart(2, '0');
     timeAxis.appendChild(tick);
   }
   grid.appendChild(timeAxis);
@@ -102,7 +102,7 @@ export const renderForexTimeline = (containerEl, forexSessions, targetTz, season
 const drawSegment = (canvas, st, ed, type, top, height, sessData, zIndex, currentDec) => {
   const isPattern = type === 'pattern-box';
   
-  const createBar = (l, w, isSplitContinuation = false) => {
+  const createBar = (l, w, isSplitContinuation = false, isSplitFirstPart = false) => {
     const bar = document.createElement('div');
     bar.className = 'session-bar';
     
@@ -120,7 +120,15 @@ const drawSegment = (canvas, st, ed, type, top, height, sessData, zIndex, curren
            // simple string for now, will dynamic update if needed
            statusText = 'OUVERT'; 
         } else {
-           statusText = `From ${formatTime(st)} To ${formatTime(ed)}`;
+           if (isSplitContinuation) {
+             // Pour la partie continuation (après minuit), afficher seulement "To XX:XX"
+             statusText = `To ${formatTime(ed)}`;
+           } else if (isSplitFirstPart) {
+             // Pour la première partie d'un segment coupé, afficher seulement "From XX:XX"
+             statusText = `From ${formatTime(st)}`;
+           } else {
+             statusText = `From ${formatTime(st)} To ${formatTime(ed)}`;
+           }
         }
 
         // Add flag only on main part (not continuation)
@@ -154,7 +162,7 @@ const drawSegment = (canvas, st, ed, type, top, height, sessData, zIndex, curren
     createBar((st / 24) * 100, ((ed - st) / 24) * 100);
   } else {
     // intervalle coupé
-    createBar((st / 24) * 100, ((24 - st) / 24) * 100);
+    createBar((st / 24) * 100, ((24 - st) / 24) * 100, false, true);
     createBar(0, (ed / 24) * 100, true);
   }
 };

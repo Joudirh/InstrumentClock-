@@ -146,6 +146,46 @@ const updateClock = () => {
   
   // Call the world clocks update here since it runs every second !
   renderWorldClocks(worldClocksContainer, forexSessions);
+  
+  // Update forex market status
+  updateForexMarketStatus();
+};
+
+const updateForexMarketStatus = () => {
+  const forexStatusBadge = document.getElementById('forex-market-status');
+  if (!forexStatusBadge) return;
+  
+  // Get current time in GMT/UTC (Forex market reference timezone)
+  const nowGMT = DateTime.now().toUTC();
+  const hourGMT = nowGMT.hour;
+  
+  let status, statusText, statusClass;
+  
+  // Determine market status based on GMT time
+  if (hourGMT >= 8 && hourGMT < 17) {
+    // Core trading hours (Sydney 8h to New York 17h)
+    status = 'open';
+    statusText = '🟢 Ouvert';
+    statusClass = 'open';
+  } else if (hourGMT >= 17 && hourGMT < 22) {
+    // After hours (New York evening to Tokyo morning)
+    status = 'after-hours';
+    statusText = '🌙 After Hours';
+    statusClass = 'after-hours';
+  } else if (hourGMT >= 22 || hourGMT < 5) {
+    // Closed (early morning hours)
+    status = 'closed';
+    statusText = '🔴 Fermé';
+    statusClass = 'closed';
+  } else {
+    // Pre-market (Sydney opening approaching)
+    status = 'pre-open';
+    statusText = '⏰ Pré-ouverture';
+    statusClass = 'pre-open';
+  }
+  
+  forexStatusBadge.textContent = statusText;
+  forexStatusBadge.className = `market-badge ${statusClass}`;
 };
 
 // --- Utils ---
