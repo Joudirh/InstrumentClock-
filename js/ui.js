@@ -1,6 +1,6 @@
 import { instrumentCategories } from './data.js';
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
-import { convertHour, formatTime, convertDayHour, getDayName } from './timezone.js';
+import { convertHour, formatTime, convertDayHour, getDayName, isInstrumentOpen } from './timezone.js';
 
 const tzFlags = {
   "Europe/London": "🇬🇧 Royaume-Uni",
@@ -19,10 +19,16 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
   const categoriesToRender = selectedCategory === 'all' 
     ? instrumentCategories 
     : instrumentCategories.filter(c => c.id === selectedCategory);
-    
+
   categoriesToRender.forEach(category => {
+    let categoryVisible = 0;
+
     category.items.forEach(inst => {
-      
+      const isOpen = isInstrumentOpen(inst);
+      if (selectedStatus === 'open' && !isOpen) return;
+      if (selectedStatus === 'closed' && isOpen) return;
+
+      categoryVisible += 1;
       const is24h = inst.openHour === 0 && inst.closeHour === 24;
       const openHourDec = is24h ? 0 : convertHour(inst.openHour, inst.openTz, targetTz, seasonKey);
       const closeHourDec = is24h ? 24 : convertHour(inst.closeHour, inst.closeTz || inst.openTz, targetTz, seasonKey);
@@ -37,7 +43,6 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
         optimalBarHtml = renderTimelineBar(optStartDec, optEndDec, 'inst-bar-optimal', '', optTimeStr);
       }
       
-      // Dynamic Days computation based on Tz
       let daysDisplay = '';
       if (inst.is24_7) {
         daysDisplay = "7j/7 - 24h/24";
@@ -50,22 +55,13 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
         
         daysDisplay = `${getDayName(oDay.day)} ${fdTime} - ${getDayName(cDay.day)} ${cdTime}`;
       } else {
-        daysDisplay = inst.days || ''; // Fallback
+        daysDisplay = inst.days || '';
       }
-      
-      const now = DateTime.now().setZone(targetTz);
-      const nowDec = now.hour + now.minute / 60;
-      
-      const isOpen = isTimeInPeriod(nowDec, openHourDec, closeHourDec);
-      
-      if (selectedStatus === 'open' && !isOpen) return;
-      if (selectedStatus === 'closed' && isOpen) return;
       
       const card = document.createElement('div');
       card.className = 'instrument-card';
       
       const countryLabel = tzFlags[inst.openTz] || "🌐 Global";
-      
       const timeStr = is24h ? "24h/24" : `${formatTime(openHourDec)} - ${formatTime(closeHourDec)}`;
 
       card.innerHTML = `
@@ -81,7 +77,6 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
         
         <div class="inst-timeline-wrap">
           <div class="inst-timeline">
-            <!-- Graduation temporelle 24h -->
             <div class="inst-axis">
               <span style="left: 0%">0h</span>
               <span style="left: 25%">6h</span>
@@ -89,16 +84,41 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
               <span style="left: 75%">18h</span>
               <span style="left: 98%">24h</span>
             </div>
-            <!-- Background bar for Open -->
             ${renderTimelineBar(openHourDec, closeHourDec, 'inst-bar-open', timeStr, '')}
-            <!-- Foreground bar for Optimal -->
             ${optimalBarHtml}
           </div>
         </div>
       `;
       containerEl.appendChild(card);
     });
+
+    if (categoryVisible === 0) {
+      const emptyCard = document.createElement('div');
+      emptyCard.className = 'instrument-card';
+      emptyCard.innerHTML = `
+        <div class="inst-header">
+          <div>
+            <div class="inst-title">Aucun marché ouvert pour cet instrument actuellement.</div>
+            <div class="inst-days">Catégorie : ${category.name}</div>
+          </div>
+        </div>
+      `;
+      containerEl.appendChild(emptyCard);
+    }
   });
+
+  if (!containerEl.hasChildNodes()) {
+    const noResults = document.createElement('div');
+    noResults.className = 'instrument-card';
+    noResults.innerHTML = `
+      <div class="inst-header">
+        <div>
+          <div class="inst-title">Aucun instrument trouvé pour la sélection actuelle.</div>
+        </div>
+      </div>
+    `;
+    containerEl.appendChild(noResults);
+  }
 };
 
 const renderTimelineBar = (start, end, className, textLabel = '', title = '') => {

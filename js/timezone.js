@@ -69,6 +69,43 @@ export const formatTime = (hourDecimal) => {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
 
+export const isWeekdayInRange = (weekday, openDay, closeDay) => {
+  if (openDay <= closeDay) {
+    return weekday >= openDay && weekday <= closeDay;
+  }
+  return weekday >= openDay || weekday <= closeDay;
+};
+
+export const isInstrumentOpen = (instrument, now = DateTime.now()) => {
+  if (instrument.is24_7) return true;
+  if (!instrument.openDay || !instrument.closeDay) return false;
+
+  const current = now.setZone(instrument.openTz);
+  const weekday = current.weekday;
+  const hourDecimal = current.hour + current.minute / 60 + current.second / 3600;
+  const openHour = instrument.openHour;
+  const closeHour = instrument.closeHour;
+  const inRange = isWeekdayInRange(weekday, instrument.openDay, instrument.closeDay);
+  if (!inRange) return false;
+
+  if (openHour <= closeHour) {
+    return hourDecimal >= openHour && hourDecimal < closeHour;
+  }
+
+  const isOpenDay = weekday === instrument.openDay;
+  const isCloseDay = weekday === instrument.closeDay;
+
+  if (isOpenDay) {
+    return hourDecimal >= openHour || (instrument.openDay === instrument.closeDay && hourDecimal <= closeHour);
+  }
+
+  if (isCloseDay) {
+    return hourDecimal <= closeHour;
+  }
+
+  return true;
+};
+
 // Check if a point in time (decimals) falls within a period
 export const isTimeInPeriod = (checkTime, start, end) => {
   // Check if period wraps around midnight

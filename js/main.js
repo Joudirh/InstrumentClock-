@@ -1,7 +1,7 @@
 import { forexSessions, instrumentCategories } from './data.js';
 import { renderForexTimeline } from './timeline.js';
 import { renderInstruments, renderTimezoneOptions, renderCategoryFilters, renderWorldClocks } from './ui.js';
-import { timezonesList, getLocalTimezone } from './timezone.js';
+import { timezonesList, getLocalTimezone, isInstrumentOpen } from './timezone.js';
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
 
 // --- State ---
@@ -26,6 +26,7 @@ const iconMoon = document.getElementById('icon-moon');
 const clockTime = document.getElementById('clock-time');
 const clockDate = document.getElementById('clock-date');
 const worldClocksContainer = document.getElementById('world-clocks-container');
+const holidayNotice = document.getElementById('holiday-notice');
 
 // --- Initialization ---
 const init = () => {
@@ -134,6 +135,9 @@ const renderAll = () => {
   
   // 3. Render Instruments Grid
   renderInstruments(instrumentsContainer, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status);
+  
+  // 4. Holiday notice (optionnel)
+  renderHolidayNotice();
 };
 
 const updateClock = () => {
@@ -154,38 +158,45 @@ const updateClock = () => {
 const updateForexMarketStatus = () => {
   const forexStatusBadge = document.getElementById('forex-market-status');
   if (!forexStatusBadge) return;
-  
-  // Get current time in GMT/UTC (Forex market reference timezone)
-  const nowGMT = DateTime.now().toUTC();
-  const hourGMT = nowGMT.hour;
-  
+
+  const forexCategory = instrumentCategories.find(c => c.id === 'forex');
+  const hasForexOpen = forexCategory && forexCategory.items.some(inst => isInstrumentOpen(inst));
+
   let status, statusText, statusClass;
-  
-  // Determine market status based on GMT time
-  if (hourGMT >= 8 && hourGMT < 17) {
-    // Core trading hours (Sydney 8h to New York 17h)
+  if (hasForexOpen) {
     status = 'open';
     statusText = '🟢 Ouvert';
     statusClass = 'open';
-  } else if (hourGMT >= 17 && hourGMT < 22) {
-    // After hours (New York evening to Tokyo morning)
-    status = 'after-hours';
-    statusText = '🌙 After Hours';
-    statusClass = 'after-hours';
-  } else if (hourGMT >= 22 || hourGMT < 5) {
-    // Closed (early morning hours)
+  } else {
     status = 'closed';
     statusText = '🔴 Fermé';
     statusClass = 'closed';
-  } else {
-    // Pre-market (Sydney opening approaching)
-    status = 'pre-open';
-    statusText = '⏰ Pré-ouverture';
-    statusClass = 'pre-open';
   }
-  
+
   forexStatusBadge.textContent = statusText;
   forexStatusBadge.className = `market-badge ${statusClass}`;
+};
+
+const getHolidayNoticeText = (now) => {
+  const month = now.month;
+  const day = now.day;
+
+  const fixedHolidays = {
+    '1-1': 'Jour de l’an – certains marchés sont fermés aujourd’hui.',
+    '12-25': 'Noël – la plupart des places boursières américaines et européennes sont fermées.',
+    '12-26': 'Saint-Étienne - certains marchés européens peuvent rester fermés.',
+    '5-1': 'Fête du Travail – certains marchés européens peuvent être fermés.'
+  };
+
+  return fixedHolidays[`${month}-${day}`] || '';
+};
+
+const renderHolidayNotice = () => {
+  if (!holidayNotice) return;
+  const now = DateTime.now().setZone(AppState.resolvedTimezone);
+  const noticeText = getHolidayNoticeText(now);
+  holidayNotice.textContent = noticeText;
+  holidayNotice.style.display = noticeText ? 'block' : 'none';
 };
 
 // --- Utils ---
