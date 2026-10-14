@@ -64,13 +64,19 @@
       </div>
     </section>
 
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-      <div class="category-filters" id="category-tabs" style="flex: 1; margin-bottom: 0;">
+    <div class="filters-bar">
+      <div class="category-filter">
+        <select id="category-tabs" aria-label="Filtrer par catégorie">
           <!-- Rempli dynamiquement -->
+        </select>
+      </div>
+      
+      <div class="search-filter">
+        <input id="instrument-search" type="search" placeholder="Rechercher un instrument…" aria-label="Rechercher un instrument" autocomplete="off">
       </div>
       
       <div class="status-filter">
-        <select id="status-selector" aria-label="Filtrer par statut" style="padding: 0.5rem 1rem; border-radius: 20px; font-weight: 500;">
+        <select id="status-selector" aria-label="Filtrer par statut">
           <option value="all">🔍 Tous les statuts</option>
           <option value="open">🟢 Ouverts</option>
           <option value="closed">🔴 Fermés</option>

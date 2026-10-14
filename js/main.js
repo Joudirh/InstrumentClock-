@@ -13,7 +13,8 @@ const AppState = {
   timezone: 'auto', // 'auto' or a timezone ID like 'Europe/Paris'
   resolvedTimezone: getLocalTimezone(),
   category: 'all', // 'all' or category ID
-  status: 'all' // 'all', 'open', 'closed'
+  status: 'all', // 'all', 'open', 'closed'
+  search: '' // free-text instrument search
 };
 
 // --- DOM Elements ---
@@ -24,6 +25,7 @@ const forexTimeline = document.getElementById('forex-timeline');
 const instrumentsContainer = document.getElementById('instruments-container');
 const categoryTabs = document.getElementById('category-tabs');
 const statusSelector = document.getElementById('status-selector');
+const instrumentSearch = document.getElementById('instrument-search');
 const iconSun = document.getElementById('icon-sun');
 const iconMoon = document.getElementById('icon-moon');
 const clockTime = document.getElementById('clock-time');
@@ -74,6 +76,10 @@ const init = async () => {
   timezoneSelector.addEventListener('change', handleTimezoneChange);
   statusSelector.addEventListener('change', handleStatusChange);
   themeToggle.addEventListener('click', handleThemeToggle);
+  instrumentSearch.addEventListener('input', debounce((e) => {
+    AppState.search = e.target.value.trim();
+    renderAll();
+  }, 200));
 
   // Floating "back to top" button (visible while scrolled down, up or down)
   const toggleScrollTopBtn = () => {
@@ -86,11 +92,11 @@ const init = async () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  // Global function for UI updates
-  window.updateCategoryFilter = (categoryId) => {
-    AppState.category = categoryId;
+  // Category dropdown filter
+  categoryTabs.addEventListener('change', (e) => {
+    AppState.category = e.target.value;
     renderAll();
-  };
+  });
 
   // Update on window resize (to re-draw timeline smoothly if needed)
   window.addEventListener('resize', debounce(() => renderAll(), 250));
@@ -151,7 +157,7 @@ const renderAll = () => {
   renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status);
+  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search);
   
   // 4. Holiday notice (optionnel)
   renderHolidayNotice();

@@ -18,8 +18,13 @@ const renderCountryLabel = (tz) => {
   return `<span class="fi fi-${flag.code}"></span> ${flag.label}`;
 };
 
-export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus) => {
+const normalizeText = (str) =>
+  (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '') => {
   containerEl.innerHTML = '';
+
+  const normalizedQuery = normalizeText(searchQuery).trim();
   
   const categoriesToRender = selectedCategory === 'all' 
     ? instrumentCategories 
@@ -32,6 +37,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       const isOpen = isInstrumentOpen(inst);
       if (selectedStatus === 'open' && !isOpen) return;
       if (selectedStatus === 'closed' && isOpen) return;
+      if (normalizedQuery && !normalizeText(inst.name).includes(normalizedQuery)) return;
 
       categoryVisible += 1;
       const is24h = inst.openHour === 0 && inst.closeHour === 24;
@@ -91,7 +97,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       containerEl.appendChild(card);
     });
 
-    if (categoryVisible === 0) {
+    if (categoryVisible === 0 && !normalizedQuery) {
       const emptyCard = document.createElement('div');
       emptyCard.className = 'instrument-card';
       emptyCard.innerHTML = `
@@ -220,20 +226,20 @@ export const renderTimezoneOptions = (selectEl, timezonesList, currentTz) => {
   selectEl.appendChild(group2);
 };
 
-export const renderCategoryFilters = (containerEl, categories, currentFilter) => {
-  containerEl.innerHTML = '';
-  
-  const allBtn = document.createElement('button');
-  allBtn.className = `category-filter-btn ${currentFilter === 'all' ? 'active' : ''}`;
-  allBtn.textContent = 'Tous les instruments';
-  allBtn.onclick = () => window.updateCategoryFilter('all');
-  containerEl.appendChild(allBtn);
-  
+export const renderCategoryFilters = (selectEl, categories, currentFilter) => {
+  selectEl.innerHTML = '';
+
+  const allOption = document.createElement('option');
+  allOption.value = 'all';
+  allOption.textContent = 'Tous les instruments';
+  selectEl.appendChild(allOption);
+
   categories.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.className = `category-filter-btn ${currentFilter === cat.id ? 'active' : ''}`;
-    btn.textContent = cat.name;
-    btn.onclick = () => window.updateCategoryFilter(cat.id);
-    containerEl.appendChild(btn);
+    const option = document.createElement('option');
+    option.value = cat.id;
+    option.textContent = cat.name;
+    selectEl.appendChild(option);
   });
+
+  selectEl.value = currentFilter;
 };
