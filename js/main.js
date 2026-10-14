@@ -1,8 +1,11 @@
-import { forexSessions, instrumentCategories } from './data.js';
+import { fetchAppData } from './api.js';
 import { renderForexTimeline } from './timeline.js';
 import { renderInstruments, renderTimezoneOptions, renderCategoryFilters, renderWorldClocks } from './ui.js';
 import { timezonesList, getLocalTimezone, isInstrumentOpen } from './timezone.js';
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
+
+// --- Data (loaded from /api, falls back to js/data.js) ---
+let AppData = { instrumentCategories: [], forexSessions: [] };
 
 // --- State ---
 const AppState = {
@@ -30,7 +33,9 @@ const holidayNotice = document.getElementById('holiday-notice');
 const scrollTopBtn = document.getElementById('scroll-top');
 
 // --- Initialization ---
-const init = () => {
+const init = async () => {
+  AppData = await fetchAppData();
+
   // Load saved preferences
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'light') {
@@ -140,13 +145,13 @@ const handleThemeToggle = () => {
 // --- Render Logic ---
 const renderAll = () => {
   // 1. Render Timeline
-  renderForexTimeline(forexTimeline, forexSessions, AppState.resolvedTimezone, AppState.season);
+  renderForexTimeline(forexTimeline, AppData.forexSessions, AppState.resolvedTimezone, AppState.season);
   
   // 2. Render Categories Filters
-  renderCategoryFilters(categoryTabs, instrumentCategories, AppState.category);
+  renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  renderInstruments(instrumentsContainer, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status);
+  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status);
   
   // 4. Holiday notice (optionnel)
   renderHolidayNotice();
@@ -161,7 +166,7 @@ const updateClock = () => {
   clockDate.textContent = now.setLocale(navigator.language).toFormat('EEEE d MMMM yyyy');
   
   // Call the world clocks update here since it runs every second !
-  renderWorldClocks(worldClocksContainer, forexSessions);
+  renderWorldClocks(worldClocksContainer, AppData.forexSessions);
   
   // Update forex market status
   updateForexMarketStatus();
@@ -171,7 +176,7 @@ const updateForexMarketStatus = () => {
   const forexStatusBadge = document.getElementById('forex-market-status');
   if (!forexStatusBadge) return;
 
-  const forexCategory = instrumentCategories.find(c => c.id === 'forex');
+  const forexCategory = AppData.instrumentCategories.find(c => c.id === 'forex');
   const hasForexOpen = forexCategory && forexCategory.items.some(inst => isInstrumentOpen(inst));
 
   let status, statusText, statusClass;

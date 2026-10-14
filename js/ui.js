@@ -1,4 +1,3 @@
-import { instrumentCategories } from './data.js';
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
 import { convertHour, formatTime, convertDayHour, getDayName, isInstrumentOpen } from './timezone.js';
 
@@ -19,7 +18,7 @@ const renderCountryLabel = (tz) => {
   return `<span class="fi fi-${flag.code}"></span> ${flag.label}`;
 };
 
-export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCategory, selectedStatus) => {
+export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus) => {
   containerEl.innerHTML = '';
   
   const categoriesToRender = selectedCategory === 'all' 
