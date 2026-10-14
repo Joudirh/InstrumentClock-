@@ -3,14 +3,20 @@ import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/lux
 import { convertHour, formatTime, convertDayHour, getDayName, isInstrumentOpen } from './timezone.js';
 
 const tzFlags = {
-  "Europe/London": "🇬🇧 Royaume-Uni",
-  "America/New_York": "🇺🇸 États-Unis",
-  "Asia/Tokyo": "🇯🇵 Japon",
-  "Australia/Sydney": "🇦🇺 Australie",
-  "Europe/Berlin": "🇩🇪 Allemagne",
-  "Europe/Paris": "🇫🇷 France",
-  "America/Chicago": "🇺🇸 États-Unis",
-  "Asia/Hong_Kong": "🇭🇰 Hong Kong"
+  "Europe/London": { code: "gb", label: "Royaume-Uni" },
+  "America/New_York": { code: "us", label: "États-Unis" },
+  "Asia/Tokyo": { code: "jp", label: "Japon" },
+  "Australia/Sydney": { code: "au", label: "Australie" },
+  "Europe/Berlin": { code: "de", label: "Allemagne" },
+  "Europe/Paris": { code: "fr", label: "France" },
+  "America/Chicago": { code: "us", label: "États-Unis" },
+  "Asia/Hong_Kong": { code: "hk", label: "Hong Kong" }
+};
+
+const renderCountryLabel = (tz) => {
+  const flag = tzFlags[tz];
+  if (!flag) return "🌐 Global";
+  return `<span class="fi fi-${flag.code}"></span> ${flag.label}`;
 };
 
 export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCategory, selectedStatus) => {
@@ -39,8 +45,8 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
         const optStartDec = isOpt24h ? 0 : convertHour(inst.optimalStartHour, inst.optimalTz, targetTz, seasonKey);
         const optEndDec = isOpt24h ? 24 : convertHour(inst.optimalEndHour, inst.optimalTz, targetTz, seasonKey);
         
-        const optTimeStr = `Optimal: ${formatTime(optStartDec)} - ${formatTime(optEndDec)}`;
-        optimalBarHtml = renderTimelineBar(optStartDec, optEndDec, 'inst-bar-optimal', '', optTimeStr);
+        const optTimeStr = `${formatTime(optStartDec)} - ${formatTime(optEndDec)}`;
+        optimalBarHtml = renderTimelineBar(optStartDec, optEndDec, 'inst-bar-optimal', optTimeStr, `Optimal: ${optTimeStr}`);
       }
       
       let daysDisplay = '';
@@ -61,7 +67,7 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
       const card = document.createElement('div');
       card.className = 'instrument-card';
       
-      const countryLabel = tzFlags[inst.openTz] || "🌐 Global";
+      const countryLabel = renderCountryLabel(inst.openTz);
       const timeStr = is24h ? "24h/24" : `${formatTime(openHourDec)} - ${formatTime(closeHourDec)}`;
 
       card.innerHTML = `
@@ -77,13 +83,7 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
         
         <div class="inst-timeline-wrap">
           <div class="inst-timeline">
-            <div class="inst-axis">
-              <span style="left: 0%">0h</span>
-              <span style="left: 25%">6h</span>
-              <span style="left: 50%">12h</span>
-              <span style="left: 75%">18h</span>
-              <span style="left: 98%">24h</span>
-            </div>
+            ${renderInstAxis()}
             ${renderTimelineBar(openHourDec, closeHourDec, 'inst-bar-open', timeStr, '')}
             ${optimalBarHtml}
           </div>
@@ -119,6 +119,21 @@ export const renderInstruments = (containerEl, targetTz, seasonKey, selectedCate
     `;
     containerEl.appendChild(noResults);
   }
+};
+
+const renderInstAxis = () => {
+  let labels = '';
+  for (let hour = 0; hour <= 24; hour += 1) {
+    const left = (hour / 24) * 100;
+    const align = hour === 0 ? 'translateX(0)' : hour === 24 ? 'translateX(-100%)' : 'translateX(-50%)';
+    labels += `<span class="inst-axis-label" style="left:${left}%;transform:${align}">${hour}h</span>`;
+  }
+  return `
+    <div class="inst-axis">
+      <div class="inst-axis-hour-ticks"></div>
+      ${labels}
+    </div>
+  `;
 };
 
 const renderTimelineBar = (start, end, className, textLabel = '', title = '') => {

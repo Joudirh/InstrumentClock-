@@ -193,6 +193,38 @@ select:focus {
   background-color: var(--border-color);
 }
 
+/* Mobile header */
+@media (max-width: 767px) {
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .logo-area {
+    text-align: center;
+  }
+
+  .system-clock {
+    min-width: 0;
+  }
+
+  .controls-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+    gap: 0.5rem;
+  }
+
+  .control-group {
+    min-width: 0;
+  }
+
+  .control-group select {
+    width: 100%;
+  }
+}
+
 .hidden {
   display: none !important;
 }
@@ -564,6 +596,19 @@ select:focus {
   border: 1px solid var(--border-color);
   padding: 2px 6px;
   border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inst-country .fi {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  line-height: 1;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 .inst-days {
@@ -584,36 +629,98 @@ select:focus {
 .status-closed { background-color: rgba(255, 59, 48, 0.1); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.3); }
 
 .inst-timeline {
-  height: 50px;
+  height: 58px;
   background: var(--bg-color-card);
   border-radius: 8px;
   position: relative;
   border: 1px solid var(--border-color);
-  margin-top: 1rem;
+  margin-top: 2rem;
 }
 
 .inst-axis {
   position: absolute;
-  top: -20px;
+  top: -24px;
   left: 0;
   width: 100%;
-  height: 20px;
+  height: 24px;
   color: var(--text-muted);
   font-size: 0.65rem;
+  pointer-events: none;
 }
 
-.inst-axis span {
+/* 5-minute graduations (no label) */
+.inst-axis::before {
+  content: "";
   position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--border-color) 0 1px,
+    transparent 1px 0.347222%
+  );
+  opacity: 0.35;
+}
+
+/* 30-minute graduations (no label) */
+.inst-axis::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--border-color) 0 1px,
+    transparent 1px 2.083333%
+  );
+  z-index: 1;
+}
+
+/* 1-hour graduations */
+.inst-axis-hour-ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 14px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--border-color) 0 1px,
+    transparent 1px 4.166667%
+  );
+  z-index: 2;
+}
+
+.inst-axis-label {
+  position: absolute;
+  top: 0;
   transform: translateX(-50%);
-  border-left: 1px solid var(--border-color);
-  padding-left: 2px;
-  height: 20px;
+  white-space: nowrap;
+  line-height: 1;
+  z-index: 3;
+}
+
+@media (max-width: 640px) {
+  .inst-axis-label {
+    display: none;
+  }
+  .inst-axis {
+    top: -16px;
+    height: 16px;
+  }
+  .inst-timeline {
+    margin-top: 1.25rem;
+  }
 }
 
 .inst-bar-open {
   position: absolute;
-  top: 10px;
-  height: 30px;
+  top: 8px;
+  height: 44px;
   background: var(--color-open);
   opacity: 0.8;
   border-radius: 6px;
@@ -631,11 +738,28 @@ select:focus {
 
 .inst-bar-optimal {
   position: absolute;
-  top: 30px;
-  height: 8px;
+  top: 27px;
+  height: 17px;
   background: var(--color-optimal);
   border-radius: 4px;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.inst-bar-optimal .inst-bar-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #04310f;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .inst-bar-label {
@@ -664,6 +788,53 @@ footer {
   padding: 2rem;
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+
+/* Floating "back to top" button */
+.scroll-top-btn {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+  z-index: 200;
+}
+
+.scroll-top-btn.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.scroll-top-btn:hover {
+  transform: translateY(-3px);
+}
+
+.scroll-top-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .scroll-top-btn {
+    right: 1rem;
+    bottom: 1rem;
+    width: 44px;
+    height: 44px;
+  }
 }
 
 .holiday-notice {

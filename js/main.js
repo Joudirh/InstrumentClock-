@@ -27,6 +27,7 @@ const clockTime = document.getElementById('clock-time');
 const clockDate = document.getElementById('clock-date');
 const worldClocksContainer = document.getElementById('world-clocks-container');
 const holidayNotice = document.getElementById('holiday-notice');
+const scrollTopBtn = document.getElementById('scroll-top');
 
 // --- Initialization ---
 const init = () => {
@@ -68,6 +69,17 @@ const init = () => {
   timezoneSelector.addEventListener('change', handleTimezoneChange);
   statusSelector.addEventListener('change', handleStatusChange);
   themeToggle.addEventListener('click', handleThemeToggle);
+
+  // Floating "back to top" button (visible while scrolled down, up or down)
+  const toggleScrollTopBtn = () => {
+    scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+  };
+  window.addEventListener('scroll', toggleScrollTopBtn, { passive: true });
+  toggleScrollTopBtn();
+
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   // Global function for UI updates
   window.updateCategoryFilter = (categoryId) => {
