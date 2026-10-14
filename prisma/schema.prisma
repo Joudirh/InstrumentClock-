@@ -1,0 +1,76 @@
+// Prisma 7 + Neon (driver adapter). Connection URL is configured in prisma.config.ts,
+// so the datasource block intentionally has no `url`.
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Season {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  label     String
+  reference DateTime
+
+  @@map("seasons")
+}
+
+model Category {
+  id          Int          @id @default(autoincrement())
+  slug        String       @unique
+  name        String
+  position    Int          @default(0)
+  instruments Instrument[]
+
+  @@map("categories")
+}
+
+model Instrument {
+  id               Int      @id @default(autoincrement())
+  name             String
+  slug             String   @unique
+  categoryId       Int      @map("category_id")
+  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  openDay          Int      @default(1) @map("open_day")
+  closeDay         Int      @default(5) @map("close_day")
+  openHour         Float    @map("open_hour")
+  closeHour        Float    @map("close_hour")
+  openTz           String   @map("open_tz")
+  optimalStartHour Float    @map("optimal_start_hour")
+  optimalEndHour   Float    @map("optimal_end_hour")
+  optimalTz        String   @map("optimal_tz")
+  is247            Boolean  @default(false) @map("is_24_7")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("instruments")
+}
+
+model ForexSession {
+  id        Int    @id @default(autoincrement())
+  slug      String @unique
+  name      String
+  flag      String
+  startHour Int    @map("start_hour")
+  endHour   Int    @map("end_hour")
+  timezone  String
+  color     String
+  yOffset   Int    @default(0) @map("y_offset")
+  position  Int    @default(0)
+
+  @@map("forex_sessions")
+}
+
+model Asset {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  filename  String
+  mimeType  String?  @map("mime_type")
+  size      Int?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("assets")
+}
