@@ -3,6 +3,7 @@
 Static front-end (Vite, vanilla ES6 modules, plain CSS) plus a small TypeScript backend: Prisma 7 -> Neon Postgres and Neon Object Storage (S3-compatible) used by Vercel serverless functions in `api/`.
 
 ## Commands
+- Setup: `npm install` (postinstall generates the Prisma client) then `cp .env.example .env` and fill `DATABASE_URL`, `DIRECT_URL`, `AWS_*` — `lib/prisma.ts` throws at import time if `DATABASE_URL` is missing, so dev/migrate/seed all fail without `.env`.
 - `npm run dev` — Vite dev server (run from repo root)
 - `npm run build` — `vite build` output to `dist/` (front-end only; API is built by Vercel)
 - `npm run preview` — serve the build
@@ -11,7 +12,7 @@ Static front-end (Vite, vanilla ES6 modules, plain CSS) plus a small TypeScript 
 - `npm run db:seed` — `tsx prisma/seed.ts`; wipes and repopulates reference data from `js/data.js`
 - `npm run db:studio` — Prisma Studio (very slow to boot here; expect minutes)
 - `npm run assets:upload` — upload `public/assets/*` to the S3 bucket and upsert `Asset` rows
-- No tests, linter, or typecheck exist. `tsc` is present but nothing runs it; Vite/Vercel/tsx transpile without type-checking.
+- No tests, linter, or typecheck script exist; Vite/Vercel/tsx transpile without type-checking. `npx tsc --noEmit` covers `api/ lib/ prisma/ scripts/` but is wired to nothing and currently fails on a pre-existing error in `prisma/seed.ts` (`is24_7` missing on a union) — don't mistake it for your regression.
 
 ## Constraints / gotchas
 - **Prisma 7 requires a driver adapter.** `lib/prisma.ts` uses `@prisma/adapter-neon`; `new PrismaClient()` without an adapter throws. Keep `prisma`, `@prisma/client`, `@prisma/adapter-neon` on the same version (pinned `7.10.0`).
@@ -29,3 +30,4 @@ Static front-end (Vite, vanilla ES6 modules, plain CSS) plus a small TypeScript 
 - API (Vercel, default export `(req, res)`): `api/instruments.ts`, `api/sessions.ts`, `api/health.ts`. The front-end loads data via `js/api.js` (`fetchAppData` → `/api/instruments` + `/api/sessions`), mapping DB rows to the front shape, and **falls back to static `js/data.js`** if the API is unreachable.
 - `vite.config.js`: a dev-only middleware (`apiDevMiddleware`, `apply: 'serve'`) runs `api/*.ts` through `ssrLoadModule` during `vite dev`, so `npm run dev` reflects the Neon DB locally (Vite doesn't serve serverless functions otherwise).
 - Deploy: `vercel.json` runs `prisma generate && prisma migrate deploy && vite build`. Set `DATABASE_URL`, `DIRECT_URL`, and the `AWS_*` vars in the Vercel project (they live in `.env`, which is gitignored). Bucket creation is handled by `ensureBucket` / `npm run assets:upload`.
+  - These vars must be **available at build time** (set for the right environment, not sensitive-only); otherwise `migrate deploy` fails with "Connection url is empty" while `generate` still passes. `prisma.config.ts` now throws a clearer error for that case.
