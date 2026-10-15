@@ -1,5 +1,5 @@
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
-import { convertHour, formatTime, convertDayHour, getDayName, isInstrumentOpen } from './timezone.js';
+import { convertHour, formatTime, convertDayHour, getDayName, isInstrumentOpen, isOptimalNow } from './timezone.js';
 
 const tzFlags = {
   "Europe/London": { code: "gb", label: "Royaume-Uni" },
@@ -21,10 +21,11 @@ const renderCountryLabel = (tz) => {
 const normalizeText = (str) =>
   (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '') => {
+export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false) => {
   containerEl.innerHTML = '';
 
   const normalizedQuery = normalizeText(searchQuery).trim();
+  const now = DateTime.now();
   
   const categoriesToRender = selectedCategory === 'all' 
     ? instrumentCategories 
@@ -37,6 +38,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       const isOpen = isInstrumentOpen(inst);
       if (selectedStatus === 'open' && !isOpen) return;
       if (selectedStatus === 'closed' && isOpen) return;
+      if (optimalOnly && !isOptimalNow(inst, now)) return;
       if (normalizedQuery && !normalizeText(inst.name).includes(normalizedQuery)) return;
 
       categoryVisible += 1;
@@ -97,7 +99,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       containerEl.appendChild(card);
     });
 
-    if (categoryVisible === 0 && !normalizedQuery) {
+    if (categoryVisible === 0 && !normalizedQuery && !optimalOnly) {
       const emptyCard = document.createElement('div');
       emptyCard.className = 'instrument-card';
       emptyCard.innerHTML = `
@@ -118,7 +120,11 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
     noResults.innerHTML = `
       <div class="inst-header">
         <div>
-          <div class="inst-title">Aucun instrument trouvé pour la sélection actuelle.</div>
+          <div class="inst-title">${
+            optimalOnly
+              ? "Aucun instrument dans sa plage horaire optimale actuellement."
+              : "Aucun instrument trouvé pour la sélection actuelle."
+          }</div>
         </div>
       </div>
     `;

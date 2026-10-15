@@ -14,7 +14,8 @@ const AppState = {
   resolvedTimezone: getLocalTimezone(),
   category: 'all', // 'all' or category ID
   status: 'all', // 'all', 'open', 'closed'
-  search: '' // free-text instrument search
+  search: '', // free-text instrument search
+  optimalOnly: false // show only instruments currently in their optimal window
 };
 
 // --- DOM Elements ---
@@ -26,6 +27,7 @@ const instrumentsContainer = document.getElementById('instruments-container');
 const categoryTabs = document.getElementById('category-tabs');
 const statusSelector = document.getElementById('status-selector');
 const instrumentSearch = document.getElementById('instrument-search');
+const optimalToggle = document.getElementById('optimal-toggle');
 const iconSun = document.getElementById('icon-sun');
 const iconMoon = document.getElementById('icon-moon');
 const clockTime = document.getElementById('clock-time');
@@ -75,6 +77,7 @@ const init = async () => {
   seasonSelector.addEventListener('change', handleSeasonChange);
   timezoneSelector.addEventListener('change', handleTimezoneChange);
   statusSelector.addEventListener('change', handleStatusChange);
+  optimalToggle.addEventListener('change', handleOptimalChange);
   themeToggle.addEventListener('click', handleThemeToggle);
   instrumentSearch.addEventListener('input', debounce((e) => {
     AppState.search = e.target.value.trim();
@@ -133,6 +136,11 @@ const handleStatusChange = (e) => {
   renderAll();
 };
 
+const handleOptimalChange = (e) => {
+  AppState.optimalOnly = e.target.checked;
+  renderAll();
+};
+
 const handleThemeToggle = () => {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const newTheme = isDark ? 'light' : 'dark';
@@ -157,7 +165,7 @@ const renderAll = () => {
   renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search);
+  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly);
   
   // 4. Holiday notice (optionnel)
   renderHolidayNotice();

@@ -116,3 +116,17 @@ export const isTimeInPeriod = (checkTime, start, end) => {
     return checkTime >= start || checkTime <= end;
   }
 };
+
+// Indique si l'heure actuelle (dans le fuseau optimal de l'instrument)
+// tombe dans la plage horaire optimale de trading.
+export const isOptimalNow = (instrument, now = DateTime.now()) => {
+  const start = instrument.optimalStartHour;
+  const end = instrument.optimalEndHour;
+  if (start === undefined || end === undefined) return false;
+  if (start === 0 && end === 24) return true;
+
+  const tz = instrument.optimalTz || instrument.openTz;
+  const current = now.setZone(tz);
+  const hourDecimal = current.hour + current.minute / 60 + current.second / 3600;
+  return isTimeInPeriod(hourDecimal, start, end);
+};
