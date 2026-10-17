@@ -42,16 +42,28 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       if (normalizedQuery && !normalizeText(inst.name).includes(normalizedQuery)) return;
 
       categoryVisible += 1;
-      const is24h = inst.openHour === 0 && inst.closeHour === 24;
-      const openHourDec = is24h ? 0 : convertHour(inst.openHour, inst.openTz, targetTz, seasonKey);
-      const closeHourDec = is24h ? 24 : convertHour(inst.closeHour, inst.closeTz || inst.openTz, targetTz, seasonKey);
-      
+      const hasScheduleSegments = Array.isArray(inst.scheduleSegments) && inst.scheduleSegments.length > 0;
+      const hasOptimalSegments = Array.isArray(inst.optimalSegments) && inst.optimalSegments.length > 0;
+
+      let scheduleBarHtml = '';
+      if (hasScheduleSegments) {
+        scheduleBarHtml = renderSegmentBars(inst.scheduleSegments, 'inst-bar-open', targetTz, seasonKey);
+      } else {
+        const is24h = inst.openHour === 0 && inst.closeHour === 24;
+        const openHourDec = is24h ? 0 : convertHour(inst.openHour, inst.openTz, targetTz, seasonKey);
+        const closeHourDec = is24h ? 24 : convertHour(inst.closeHour, inst.closeTz || inst.openTz, targetTz, seasonKey);
+        const timeStr = is24h ? "24h/24" : `${formatTime(openHourDec)} - ${formatTime(closeHourDec)}`;
+        scheduleBarHtml = renderTimelineBar(openHourDec, closeHourDec, 'inst-bar-open', timeStr, '');
+      }
+
       let optimalBarHtml = '';
-      if (inst.optimalStartHour !== undefined && inst.optimalEndHour !== undefined) {
+      if (hasOptimalSegments) {
+        optimalBarHtml = renderSegmentBars(inst.optimalSegments, 'inst-bar-optimal', targetTz, seasonKey);
+      } else if (inst.optimalStartHour !== undefined && inst.optimalEndHour !== undefined) {
         const isOpt24h = inst.optimalStartHour === 0 && inst.optimalEndHour === 24;
         const optStartDec = isOpt24h ? 0 : convertHour(inst.optimalStartHour, inst.optimalTz, targetTz, seasonKey);
         const optEndDec = isOpt24h ? 24 : convertHour(inst.optimalEndHour, inst.optimalTz, targetTz, seasonKey);
-        
+
         const optTimeStr = `${formatTime(optStartDec)} - ${formatTime(optEndDec)}`;
         optimalBarHtml = renderTimelineBar(optStartDec, optEndDec, 'inst-bar-optimal', optTimeStr, `Optimal: ${optTimeStr}`);
       }
@@ -75,7 +87,6 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       card.className = 'instrument-card';
       
       const countryLabel = renderCountryLabel(inst.openTz);
-      const timeStr = is24h ? "24h/24" : `${formatTime(openHourDec)} - ${formatTime(closeHourDec)}`;
 
       card.innerHTML = `
         <div class="inst-header">
@@ -91,7 +102,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
         <div class="inst-timeline-wrap">
           <div class="inst-timeline">
             ${renderInstAxis()}
-            ${renderTimelineBar(openHourDec, closeHourDec, 'inst-bar-open', timeStr, '')}
+            ${scheduleBarHtml}
             ${optimalBarHtml}
           </div>
         </div>
@@ -165,6 +176,24 @@ const renderTimelineBar = (start, end, className, textLabel = '', title = '') =>
     `;
   }
 };
+
+const MIN_LABEL_SPAN_HOURS = 4;
+
+const renderSegmentBars = (segments, className, targetTz, seasonKey, sourceTz = 'UTC') =>
+  segments
+    .map(([start, end]) => {
+      const startDec = convertHour(start, sourceTz, targetTz, seasonKey);
+      const endDec = convertHour(end, sourceTz, targetTz, seasonKey);
+      const label = `${formatTime(startDec)} - ${formatTime(endDec)}`;
+      return renderTimelineBar(
+        startDec,
+        endDec,
+        className,
+        end - start >= MIN_LABEL_SPAN_HOURS ? label : '',
+        label
+      );
+    })
+    .join('');
 
 const isTimeInPeriod = (checkTime, start, end) => {
   if (start < end) {

@@ -15,6 +15,8 @@ const mapInstrument = (inst) => ({
   optimalEndHour: inst.optimalEndHour,
   optimalTz: inst.optimalTz,
   is24_7: inst.is247,
+  scheduleSegments: inst.scheduleSegments,
+  optimalSegments: inst.optimalSegments,
 });
 
 const mapCategory = (category) => ({

@@ -43,6 +43,8 @@ model Instrument {
   optimalEndHour   Float    @map("optimal_end_hour")
   optimalTz        String   @map("optimal_tz")
   is247            Boolean  @default(false) @map("is_24_7")
+  scheduleSegments Json?    @map("schedule_segments")
+  optimalSegments  Json?    @map("optimal_segments")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 

@@ -77,6 +77,16 @@ export const isWeekdayInRange = (weekday, openDay, closeDay) => {
 };
 
 export const isInstrumentOpen = (instrument, now = DateTime.now()) => {
+  if (Array.isArray(instrument.scheduleSegments) && instrument.scheduleSegments.length) {
+    if (!instrument.openDay || !instrument.closeDay) return false;
+    const utc = now.setZone('UTC');
+    if (!isWeekdayInRange(utc.weekday, instrument.openDay, instrument.closeDay)) return false;
+    const utcHour = utc.hour + utc.minute / 60 + utc.second / 3600;
+    return instrument.scheduleSegments.some(([start, end]) =>
+      start <= end ? utcHour >= start && utcHour < end : utcHour >= start || utcHour < end
+    );
+  }
+
   if (instrument.is24_7) return true;
   if (!instrument.openDay || !instrument.closeDay) return false;
 

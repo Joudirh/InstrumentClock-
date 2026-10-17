@@ -59,7 +59,7 @@ export const forexSessions = [
 ];
 
 // Instruments de trading
-export const instrumentCategories = [
+const categories = [
   {
     name: "Forex",
     id: "forex",
@@ -152,6 +152,20 @@ export const instrumentCategories = [
     ]
   },
   {
+    name: "ETF",
+    id: "etf",
+    items: [
+      { name: "SPY (S&P 500 ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" },
+      { name: "QQQ (Nasdaq 100 ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" },
+      { name: "DIA (Dow Jones ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" },
+      { name: "IWM (Russell 2000 ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" },
+      { name: "VTI (Total Market ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" },
+      { name: "EEM (Emerging Markets ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" },
+      { name: "XLF (Financials ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" },
+      { name: "XLE (Energy ETF)", openDay: 1, closeDay: 5, openHour: 9.5, closeHour: 16, openTz: "America/New_York", optimalStartHour: 10.5, optimalEndHour: 16, optimalTz: "America/New_York" }
+    ]
+  },
+  {
     name: "Futures",
     id: "futures",
     items: [
@@ -168,3 +182,26 @@ export const instrumentCategories = [
     ]
   }
 ];
+
+// Negociation ("orange") and optimal ("green") bars, expressed as absolute UTC
+// decimal-hour windows. Multiple segments model the daily trading pauses.
+// 21:59 = 21 + 59/60, 22:05 = 22 + 5/60.
+const CATEGORY_SEGMENTS = {
+  forex: { schedule: [[0, 21 + 59 / 60], [22 + 5 / 60, 24]], optimal: [[8, 12], [14.5, 21]] },
+  indices: { schedule: [[0, 22], [22 + 5 / 60, 24]], optimal: [[14.5, 21]] },
+  commodities: { schedule: [[0, 21 + 59 / 60], [23, 24]], optimal: [[14, 20]] },
+  stocks: { schedule: [[0, 24]], optimal: [[9, 17]] },
+  crypto: { schedule: [[0, 22], [22 + 5 / 60, 24]], optimal: [[14, 22]] },
+  etf: { schedule: [[14.5, 21]], optimal: [[15.5, 21]] }
+};
+
+categories.forEach(category => {
+  const segments = CATEGORY_SEGMENTS[category.id];
+  if (!segments) return;
+  category.items.forEach(item => {
+    item.scheduleSegments = segments.schedule;
+    item.optimalSegments = segments.optimal;
+  });
+});
+
+export const instrumentCategories = categories;

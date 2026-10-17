@@ -68,6 +68,7 @@ const init = async () => {
   if (savedTz) {
     AppState.timezone = savedTz;
   }
+  AppState.resolvedTimezone = AppState.timezone === 'auto' ? getLocalTimezone() : AppState.timezone;
 
   // Populate TZ Dropdown
   renderTimezoneOptions(timezoneSelector, timezonesList, getLocalTimezone());

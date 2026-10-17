@@ -59,6 +59,8 @@ async function main() {
             optimalEndHour: item.optimalEndHour,
             optimalTz: item.optimalTz,
             is247: item.is24_7 ?? false,
+            scheduleSegments: item.scheduleSegments ?? undefined,
+            optimalSegments: item.optimalSegments ?? undefined,
           })),
         },
       },
