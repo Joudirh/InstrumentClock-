@@ -67,6 +67,10 @@ CREATE TABLE "assets" (
     CONSTRAINT "assets_pkey" PRIMARY KEY ("id")
 );
 
+-- AlterTable
+ALTER TABLE "instruments" ADD COLUMN     "optimal_segments" JSONB,
+ADD COLUMN     "schedule_segments" JSONB;
+
 -- CreateIndex
 CREATE UNIQUE INDEX "seasons_key_key" ON "seasons"("key");
 
