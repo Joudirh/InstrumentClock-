@@ -743,15 +743,15 @@ select:focus {
   border: 1px solid var(--border-color);
   background: var(--bg-color-card);
   border-radius: 50%;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   line-height: 1;
-  font-size: 0.8rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
+  padding: 0;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -766,10 +766,18 @@ select:focus {
   background: rgba(52, 199, 89, 0.1);
 }
 
+.inst-info-btn .inst-caret {
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.inst-info-btn.active .inst-caret {
+  transform: rotate(180deg);
+}
+
 .inst-details {
   display: none;
-  margin-top: 0.5rem;
-  padding: 0.6rem 0.75rem;
+  padding: 0.75rem 0.9rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--bg-color-card);
@@ -783,13 +791,50 @@ select:focus {
 .inst-details-desc {
   color: var(--text-muted);
   line-height: 1.45;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.6rem;
 }
 
-.inst-details-session {
-  font-weight: 600;
+.inst-details-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.inst-details-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.inst-details-meta-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.inst-details-meta-value {
   font-size: 0.75rem;
-  margin-bottom: 0.4rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.inst-details-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.inst-details-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.72rem;
+  margin-bottom: 0.25rem;
 }
 
 .inst-details-list {
@@ -805,12 +850,8 @@ select:focus {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.5rem 0.9rem;
-}
-
-.inst-details-kind {
-  font-weight: 600;
-  min-width: 4.5rem;
+  gap: 0.5rem 1.2rem;
+  padding-left: 1rem;
 }
 
 .inst-details-days {

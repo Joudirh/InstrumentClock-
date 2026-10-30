@@ -27,7 +27,8 @@ Static front-end (Vite, vanilla ES6 modules, plain CSS) plus a small TypeScript 
 - `package.json` is `"type": "module"` because the Prisma 7 client is ESM-first. The browser files in `js/` are loaded via `<script type="module">` and are unaffected.
 - `js/*.js` import Luxon from a CDN ESM URL (not an npm dep); dev/build need network access. Changing the Luxon version means editing every import.
 - Flag images are referenced with absolute `/assets/<file>.png` paths (in `js/timeline.js`) and live in `public/assets/`. Serve from the repo root; opening `index.html` directly breaks modules and these paths.
-- `prisma/seed.ts` imports the plain-JS `js/data.js` directly (single source of truth). Editing the data there and re-running `db:seed` is the supported way to change instruments/sessions.
+- **Seed source of truth is `prisma/seed-data.ts` (TypeScript), not `js/data.js`.** Editing instruments/sessions means editing it and re-running `npm run db:seed`. Instruments are declared as compact `Row` entries: `sessionSlug`, `t:` (trading) / `o:` (optimal) windows as `"HH:MM-HH:MM"` spans (timezone defaults to the session's), and a one-line `description` in the `DESCRIPTIONS` map keyed by instrument id. `js/data.js` is only the front-end static fallback; don't try to keep both in sync.
+- Seed validation is strict: every instrument must have at least one TRADING **and** one OPTIMAL window (abort with no writes otherwise); windows use minutes-of-day, `endMinute` may exceed 1440 (up to 2880) for midnight-crossing; days are `1..7`. Schema note: legacy `openDay/closeDay/openHour/...` columns are derived only on instrument **create** (updates never touch them); the front reads the normalized `instrument_windows` instead.
 - `DOCUMENTATION.md` is partly stale (says to open `index.html` directly, references `assets/*`); trust the code.
 
 ## Architecture
