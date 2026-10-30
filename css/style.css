@@ -732,6 +732,102 @@ select:focus {
   color: #fff;
 }
 
+.inst-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.inst-info-btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-color-card);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  line-height: 1;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.inst-info-btn:hover {
+  color: var(--text-color);
+  border-color: var(--text-muted);
+}
+
+.inst-info-btn.active {
+  color: #34c759;
+  border-color: rgba(52, 199, 89, 0.4);
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.inst-details {
+  display: none;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-color-card);
+  font-size: 0.78rem;
+}
+
+.inst-details.open {
+  display: block;
+}
+
+.inst-details-desc {
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 0.4rem;
+}
+
+.inst-details-session {
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.inst-details-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.inst-details-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+}
+
+.inst-details-kind {
+  font-weight: 600;
+  min-width: 4.5rem;
+}
+
+.inst-details-days {
+  color: var(--text-muted);
+  min-width: 5.5rem;
+}
+
+.inst-details-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.inst-details-time em {
+  font-style: normal;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
 .status-open { background-color: rgba(52, 199, 89, 0.1); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.3); }
 .status-closed { background-color: rgba(255, 59, 48, 0.1); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.3); }
 

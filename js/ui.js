@@ -36,6 +36,49 @@ const renderSessionLabel = (inst) => {
 const normalizeText = (str) =>
   (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+// Panneau de détails ouvert par l'icône œil : conservé entre les re-rendus
+// (les cartes sont recréées toutes les 60 s).
+const openDetails = new Set();
+const detailsKey = (inst) => inst.id ?? inst.name;
+
+const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
+  const sessionLine = inst.session
+    ? `<span class="fi fi-${(tzFlags[inst.session.timezone] || {}).code}"></span> Session ${inst.session.name} — ${inst.session.timezone} ${inst.session.is24_7 ? '(24/7)' : ''}`
+    : renderCountryLabel(inst.openTz);
+
+  const windowRow = (w) => {
+    const { startDec, endDec } = windowDecimals(w, targetTz, seasonKey);
+    const isFullDay = w.startMinute === 0 && w.endMinute === 1440;
+    const native = isFullDay ? '24h/24' : `${formatMinutes(w.startMinute)} - ${formatMinutes(w.endMinute)}`;
+    const local = isFullDay ? '24h/24' : `${formatTime(startDec)} - ${formatTime(endDec)}`;
+    const kindLabel = w.kind === 'TRADING' ? 'Séance' : 'Optimal';
+    const dot = w.kind === 'TRADING' ? 'open' : 'optimal';
+    return `
+      <li class="inst-details-row">
+        <i class="inst-legend-dot ${dot}"></i>
+        <span class="inst-details-kind">${kindLabel}</span>
+        <span class="inst-details-days">${describeDays(w.days)}</span>
+        <span class="inst-details-time">${native} <em>(fuseau ${w.timezone})</em></span>
+        <span class="inst-details-time">${local} <em>(fuseau d'affichage ${targetTz})</em></span>
+      </li>`;
+  };
+
+  const rows = (Array.isArray(inst.windows) ? inst.windows : []).map(windowRow).join('');
+  const legacySchedule = !rows && Array.isArray(inst.scheduleSegments) && inst.scheduleSegments.length
+    ? `<li class="inst-details-row"><span class="inst-details-kind">Séance</span><span class="inst-details-time">${inst.scheduleSegments.map(([s, e]) => `${formatMinutes(s * 60)} - ${formatMinutes(e * 60)}`).join(' | ')}</span></li>`
+    : '';
+  const legacyOptimal = !rows && inst.optimalStartHour !== undefined
+    ? `<li class="inst-details-row"><span class="inst-details-kind">Optimal</span><span class="inst-details-time">${formatMinutes(inst.optimalStartHour * 60)} - ${formatMinutes(inst.optimalEndHour * 60)} <em>(fuseau ${inst.optimalTz || inst.openTz})</em></span></li>`
+    : '';
+  return `
+    <div class="inst-details-inner">
+      ${inst.description ? `<div class="inst-details-desc">${inst.description}</div>` : ''}
+      <div class="inst-details-session">${sessionLine}</div>
+      <ul class="inst-details-list">${rows}${legacySchedule}${legacyOptimal}</ul>
+    </div>
+  `;
+};
+
 export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false) => {
   containerEl.innerHTML = '';
 
@@ -121,11 +164,16 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
           <div>
             <div class="inst-title">${inst.name} <span class="inst-country">${countryLabel}</span> <span style="font-size:0.75rem;font-weight:normal;color:var(--text-muted)">(${category.name})</span></div>
             <div class="inst-days">${daysDisplay}</div>
-            ${inst.description ? `<div class="inst-description">${inst.description}</div>` : ''}
           </div>
-          <div class="inst-status ${isOpen ? 'status-open' : 'status-closed'}">
-            ${isOpen ? '🟢 OUVERT' : '🔴 FERMÉ'}
+          <div class="inst-header-actions">
+            <button type="button" class="inst-info-btn${openDetails.has(detailsKey(inst)) ? ' active' : ''}" data-inst="${detailsKey(inst)}" aria-label="Afficher les détails de l'instrument" title="Détails de l'instrument">👁</button>
+            <div class="inst-status ${isOpen ? 'status-open' : 'status-closed'}">
+              ${isOpen ? '🟢 OUVERT' : '🔴 FERMÉ'}
+            </div>
           </div>
+        </div>
+        <div class="inst-details${openDetails.has(detailsKey(inst)) ? ' open' : ''}" data-inst-details="${detailsKey(inst)}">
+          ${instDetailsHtml(inst, category, targetTz, seasonKey)}
         </div>
         
         <div class="inst-timeline-wrap">
@@ -170,6 +218,22 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       </div>
     `;
     containerEl.appendChild(noResults);
+  }
+
+  // Un seul listener sur le conteneur (survit aux re-rendus qui recréent les cartes).
+  if (!containerEl._instDetailsBound) {
+    containerEl._instDetailsBound = true;
+    containerEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.inst-info-btn');
+      if (!btn) return;
+      const key = btn.dataset.inst;
+      const panel = containerEl.querySelector(`.inst-details[data-inst-details="${key}"]`);
+      if (!panel) return;
+      const willOpen = !panel.classList.contains('open');
+      panel.classList.toggle('open', willOpen);
+      btn.classList.toggle('active', willOpen);
+      if (willOpen) openDetails.add(key); else openDetails.delete(key);
+    });
   }
 };
 
