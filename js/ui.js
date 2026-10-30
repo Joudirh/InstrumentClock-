@@ -186,9 +186,11 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
         }
       }
       
+      const item = document.createElement('div');
+      item.className = 'inst-item';
       const card = document.createElement('div');
       card.className = 'instrument-card';
-      
+
       const countryLabel = renderSessionLabel(inst);
 
       card.innerHTML = `
@@ -214,11 +216,16 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
           </div>
           ${windowsLegend}
         </div>
-        <div class="inst-details${openDetails.has(detailsKey(inst)) ? ' open' : ''}" data-inst-details="${detailsKey(inst)}">
-          ${instDetailsHtml(inst, category, targetTz, seasonKey)}
-        </div>
       `;
-      containerEl.appendChild(card);
+
+      const details = document.createElement('div');
+      details.className = `inst-details${openDetails.has(detailsKey(inst)) ? ' open' : ''}`;
+      details.setAttribute('data-inst-details', detailsKey(inst));
+      details.innerHTML = instDetailsHtml(inst, category, targetTz, seasonKey);
+
+      item.appendChild(card);
+      item.appendChild(details);
+      containerEl.appendChild(item);
     });
 
     if (categoryVisible === 0 && !normalizedQuery && !optimalOnly) {

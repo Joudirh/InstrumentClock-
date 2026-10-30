@@ -1069,7 +1069,17 @@ select:focus {
 
 /* Desktop override */
 @media (min-width: 768px) {
-  .instrument-card {
+.inst-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.inst-item .inst-details {
+  width: 100%;
+}
+
+.instrument-card {
     flex-direction: row;
     align-items: center;
   }
