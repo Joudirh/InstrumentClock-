@@ -715,6 +715,14 @@ select:focus {
   color: var(--text-muted);
 }
 
+.inst-description {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  max-width: 60ch;
+  line-height: 1.4;
+}
+
 .inst-status {
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-md);

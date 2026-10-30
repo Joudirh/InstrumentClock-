@@ -30,6 +30,7 @@ export interface WindowSeed {
 export interface InstrumentSeed {
   id: number;
   name: string;
+  description: string;
   sessionSlug: string;
   categoryId: number;
   windows: WindowSeed[];
@@ -152,15 +153,107 @@ interface Row {
   o: string[];
   oExtra?: WindowSeed[];
   tz?: string;
+  tDays?: number[];
   oDays?: number[];
 }
+
+// Description affichée sur la carte de chaque instrument (une phrase concise).
+const DESCRIPTIONS: Record<number, string> = {
+  // Forex (catégorie 7)
+  72: "Duo le plus échangé au monde, négocié pendant la session de Londres ; plage optimale l'après-midi londonien, au chevauchement avec New York.",
+  73: "La « câble » GBP/USD, négociée pendant la session de Londres ; plage optimale l'après-midi londonien (chevauchement New York).",
+  74: "Croisement intra-européen EUR/GBP, négocié pendant la session de Londres ; plage optimale en matinée londonienne.",
+  75: "Dollar US/yen négocié pendant la session de New York ; plage optimale le matin new-yorkais.",
+  76: "Pétrocurrence liée au brut canadien (WTI), négociée pendant la session de New York ; plage optimale le matin.",
+  77: "Dollar australien / dollar US, sensible au cycle chinois ; négocié pendant la session de New York, optimale le matin.",
+  78: "Dollar US/yen négocié pendant la session d'Asie (Tokyo) ; plage optimale la matinée tokyoïte.",
+  79: "Cross AUD/JPY, favori de volatilité de la session asiatique ; optimale la matinée à Tokyo.",
+  80: "Dollar néo-zélandais / dollar US, négocié pendant la session de Sydney ; optimale la matinée australienne.",
+  81: "Croisement EUR/AUD, négocié pendant la session de Londres ; optimale la matinée londonienne.",
+  82: "Dollar US / yuan chinois (offshore), négocié pendant la session d'Asie ; optimale la matinée sur Shanghai.",
+  83: "Cross GBP/JPY (« geppy »), très volatile ; négocié pendant la session de Londres, optimale en matinée.",
+  84: "Cross EUR/JPY, négocié pendant la session de Londres ; optimale la matinée londonienne.",
+  85: "Dollar US / franc suisse, valeur refuge ; négocié pendant la session de Londres, optimale l'après-midi (New York).",
+  86: "Dollar US / dollar de Singapour, négocié pendant la session d'Asie ; optimale la matinée à Singapour.",
+  87: "Peso mexicain / dollar US, marché émergent très volatile ; négocié à New York, optimale le matin.",
+  // Indices (catégorie 8)
+  88: "Indice phare des grandes capitalisations américaines, coté 09:30–16:00 (New York) ; optimale à l'ouverture.",
+  89: "Indice industriel Dow Jones (30 valeurs US), coté 09:30–16:00 (New York) ; optimale à l'ouverture.",
+  90: "Indice technologique Nasdaq-100, coté 09:30–16:00 (New York) ; optimale à l'ouverture.",
+  91: "Indice allemand DAX (Francfort), coté 09:00–17:30 ; optimale la matinée européenne.",
+  92: "Indice britannique FTSE 100, coté 08:00–16:30 (Londres) ; optimale le matin.",
+  93: "Indice français CAC 40 (Euronext Paris), coté 09:00–17:30 ; optimale la matinée.",
+  94: "Indice japonais Nikkei 225, coté 09:00–15:30 (Tokyo) avec pause déjeuner 11:30–12:30 ; optimale la matinée.",
+  95: "Indice Hong Kong Hang Seng, coté 09:30–16:00 avec pause déjeuner 12:00–13:00 ; optimale la matinée.",
+  96: "Indice suisse SMI (SIX Zurich), coté 09:00–17:30 ; optimale la matinée.",
+  97: "Indice australien ASX 200, coté 10:00–16:00 (Sydney) ; optimale à l'ouverture.",
+  98: "Indice small caps US Russell 2000, coté 09:30–16:00 (New York) ; optimale à l'ouverture.",
+  99: "Indice espagnol IBEX 35 (BME Madrid), coté 09:00–17:30 ; optimale la matinée.",
+  100: "Indice principal de la Bourse de Tunis, coté 09:00–12:00 ; optimale à l'ouverture (horaires à confirmer côté place).",
+  101: "Indice du top 20 tunisien, coté 09:00–12:00 ; optimale à l'ouverture (horaires à confirmer côté place).",
+  // Matières premières (catégorie 9)
+  102: "Or spot (XAU/USD), négocié côté New York 08:00–17:00 ; optimale 08:30–12:00, à l'ouverture des bourses US.",
+  103: "Argent spot (XAG/USD), négocié côté New York 08:00–17:00 ; optimale 08:30–12:00.",
+  104: "Brut américain WTI spot, négocié 09:00–14:30 (New York) ; optimale à l'ouverture 09:00–11:30.",
+  105: "Brut européen Brent, négocié côté Londres 08:00–17:00 ; optimale la matinée 08:00–10:30.",
+  106: "Maïs (CBOT Chicago), cotation 08:30–13:20 heure de Chicago ; optimale à l'ouverture 08:30–11:30.",
+  107: "Soja (CBOT Chicago), cotation 08:30–13:20 heure de Chicago ; optimale à l'ouverture 08:30–11:30.",
+  108: "Blé (CBOT Chicago), cotation 08:30–13:20 heure de Chicago ; optimale à l'ouverture 08:30–11:30.",
+  109: "Platine spot (XPT/USD), négocié côté New York 08:00–17:00 ; optimale 08:30–12:00.",
+  110: "Palladium spot (XPD/USD), négocié côté New York 08:00–17:00 ; optimale 08:30–12:00.",
+  111: "Sucre n°11 (ICE), négocié côté New York 08:00–17:00 ; optimale le matin 08:00–11:00.",
+  112: "Café Arabica (ICE), cotation 08:15–13:30 heure de New York ; optimale à l'ouverture 08:15–11:00.",
+  113: "Cuivre COMEX (HG), négocié côté New York 08:00–17:00 ; optimale 08:30–12:00.",
+  114: "Cacao (ICE), négocié côté New York 08:00–17:00 ; optimale le matin 08:00–11:00.",
+  115: "Gaz naturel Henry Hub (NYMEX), très volatile ; négocié côté New York, optimale 08:30–11:30.",
+  116: "Coton n°2 (ICE), négocié côté New York 08:00–17:00 ; optimale le matin 08:00–11:00.",
+  // Actions / bourses (catégorie 10)
+  117: "Bourse des grandes capitalisations US, séance 09:30–16:00 (New York) ; optimale à l'ouverture.",
+  118: "Marché technologique US, séance 09:30–16:00 (New York) ; optimale à l'ouverture.",
+  119: "Première place paneuropéenne (Euronext), séance 09:00–17:30 ; optimale la matinée.",
+  120: "Bourse de Tokyo, séance 09:00–15:30 avec pause déjeuner 11:30–12:30 ; optimale la matinée.",
+  121: "Bourse de Shanghai, séance 09:30–15:00 avec pause 11:30–13:00 ; optimale la matinée.",
+  122: "Bourse de Hong Kong, séance 09:30–16:00 avec pause déjeuner 12:00–13:00 ; optimale la matinée.",
+  123: "Bourse australienne ASX, séance 10:00–16:00 (Sydney) ; optimale à l'ouverture.",
+  124: "Marché principal de la Bourse de Tunis, séance 09:00–12:00 ; optimale à l'ouverture (horaires à confirmer côté place).",
+  // Crypto (catégorie 11)
+  125: "Crypto-monnaie de référence, cotée 24h/24 et 7j/7 (cotation fuseau New York) ; plage optimale 08:00–12:00.",
+  126: "Token de règlement transfrontalier (XRP Ledger), coté 24h/24 et 7j/7 (cotation fuseau New York) ; plage optimale 08:00–12:00.",
+  127: "Blockchain de contrats intelligents (ADA), cotée 24h/24 et 7j/7 (cotation UTC) ; plage optimale 08:00–12:00.",
+  128: "Crypto-monnaie légère dérivée de Bitcoin, cotée 24h/24 et 7j/7 (cotation UTC) ; plage optimale 08:00–12:00.",
+  129: "Blockchain haute performance (SOL), cotée 24h/24 et 7j/7 (cotation UTC) ; plage optimale 08:00–12:00.",
+  130: "Seconde crypto-monnaie et pilier de la DeFi, cotée 24h/24 et 7j/7 (cotation UTC) ; plage optimale 08:00–12:00.",
+  131: "Jeton de l'écosystème Binance (BNB), coté 24h/24 et 7j/7 (cotation UTC) ; plage optimale 08:00–12:00.",
+  132: "Crypto-monnaie à mème d'origine (DOGE), cotée 24h/24 et 7j/7 (cotation UTC) ; plage optimale 08:00–12:00.",
+  // ETF (catégorie 12)
+  133: "ETF adossé au S&P 500, séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  134: "ETF adossé au Nasdaq 100, séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  135: "ETF adossé au Dow Jones, séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  136: "ETF adossé au Russell 2000, séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  137: "ETF marché total US (~3 500 titres), séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  138: "ETF actions émergentes (MSCI EM), séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  139: "ETF sectoriel financier US, séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  140: "ETF sectoriel énergie US, séance 09:30–16:00 (New York) ; optimale 10:30–16:00.",
+  // Futures (catégorie 13)
+  141: "Futures E-mini S&P 500 (CME), cotation quasi continue 18:00 → 17:00 le lendemain, du dimanche au jeudi ; optimale 09:30–11:30.",
+  142: "Futures DAX (Eurex), cotation 01:15–22:00 (Berlin) ; optimale la matinée européenne.",
+  143: "Futures sur l'indice paneuropéen (Eurex), cotation 01:15–22:00 (Berlin) ; optimale la matinée européenne.",
+  144: "Futures Nikkei (Osaka), cotation 08:30–15:15 (Tokyo) ; optimale la matinée.",
+  145: "Futures Hang Seng (HKEX), cotation 09:15–16:30 (Hong Kong) ; optimale la matinée.",
+  146: "Futures pétrole WTI (NYMEX/CME), cotation de nuit 18:00 → 17:00 le lendemain, du dimanche au jeudi ; optimale 09:00–11:30.",
+  147: "Futures gaz naturel (NYMEX/CME), cotation de nuit 18:00 → 17:00 le lendemain, du dimanche au jeudi ; optimale 08:30–11:30.",
+  148: "Futures Russell 2000 (CME), cotation de nuit 18:00 → 17:00 le lendemain, du dimanche au jeudi ; optimale 09:30–11:30.",
+  149: "Futures Nasdaq-100 E-mini (CME), cotation de nuit 18:00 → 17:00 le lendemain, du dimanche au jeudi ; optimale 09:30–11:30.",
+  150: "Futures or GC (COMEX/CME), cotation de nuit 18:00 → 17:00 le lendemain, du dimanche au jeudi ; optimale 08:30–12:00.",
+};
 
 const build = (rows: Row[]): InstrumentSeed[] =>
   rows.map((row) => {
     const tz = row.tz ?? SESSION_TZ[row.sessionSlug];
     const oDays = row.oDays ?? WEEK;
+    const tDays2 = row.tDays ?? WEEK;
     const windows: WindowSeed[] = [
-      ...row.t.map((span, i) => ({ ...t(WEEK, span, tz), position: i })),
+      ...row.t.map((span, i) => ({ ...t(tDays2, span, tz), position: i })),
       ...(row.tExtra ?? []).map((win, i) => ({ ...win, position: row.t.length + i })),
       ...row.o.map((span, i) => ({ ...o(oDays, span, tz), position: i })),
       ...(row.oExtra ?? []).map((win, i) => ({ ...win, position: row.o.length + i })),
@@ -168,6 +261,7 @@ const build = (rows: Row[]): InstrumentSeed[] =>
     return {
       id: row.id,
       name: row.name,
+      description: DESCRIPTIONS[row.id] ?? "",
       sessionSlug: row.sessionSlug,
       categoryId: row.categoryId,
       windows,
@@ -263,16 +357,27 @@ const stockRows: Row[] = [
   { id: 124, name: "Bourse de Tunis (Marché principal)", sessionSlug: "tunis", categoryId: 10, t: ["09:00-12:00"], o: ["09:00-10:30"] },
 ];
 
-// Crypto (catégorie 11) — session global-24-7, jours 1-7, OPTIMAL aussi 1-7
+// Crypto (catégorie 11) — session global-24-7, jours 1-7 (TRADING et OPTIMAL)
+const cryptoRow = (id: number, name: string, tz: string): Row => ({
+  id,
+  name,
+  sessionSlug: "global-24-7",
+  categoryId: 11,
+  t: ["00:00-24:00"],
+  o: ["08:00-12:00"],
+  tz,
+  tDays: SEVEN,
+  oDays: SEVEN,
+});
 const cryptoRows: Row[] = [
-  { id: 125, name: "Bitcoin (BTC)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "America/New_York", oDays: SEVEN },
-  { id: 126, name: "Ripple (XRP)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "America/New_York", oDays: SEVEN },
-  { id: 127, name: "Cardano (ADA)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "UTC", oDays: SEVEN },
-  { id: 128, name: "Litecoin (LTC)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "UTC", oDays: SEVEN },
-  { id: 129, name: "Solana (SOL)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "UTC", oDays: SEVEN },
-  { id: 130, name: "Ethereum (ETH)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "UTC", oDays: SEVEN },
-  { id: 131, name: "BNB (BNB)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "UTC", oDays: SEVEN },
-  { id: 132, name: "Dogecoin (DOGE)", sessionSlug: "global-24-7", categoryId: 11, t: ["00:00-24:00"], o: ["08:00-12:00"], tz: "UTC", oDays: SEVEN },
+  cryptoRow(125, "Bitcoin (BTC)", "America/New_York"),
+  cryptoRow(126, "Ripple (XRP)", "America/New_York"),
+  cryptoRow(127, "Cardano (ADA)", "UTC"),
+  cryptoRow(128, "Litecoin (LTC)", "UTC"),
+  cryptoRow(129, "Solana (SOL)", "UTC"),
+  cryptoRow(130, "Ethereum (ETH)", "UTC"),
+  cryptoRow(131, "BNB (BNB)", "UTC"),
+  cryptoRow(132, "Dogecoin (DOGE)", "UTC"),
 ];
 
 // ETF (catégorie 12) — session new-york

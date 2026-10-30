@@ -135,10 +135,11 @@ async function main() {
 
       await tx.instrument.upsert({
         where: { id: inst.id },
-        update: { sessionId, categoryId: inst.categoryId },
+        update: { sessionId, categoryId: inst.categoryId, description: inst.description },
         create: {
           id: inst.id,
           name: inst.name,
+          description: inst.description,
           slug: slugify(inst.name),
           categoryId: inst.categoryId,
           sessionId,

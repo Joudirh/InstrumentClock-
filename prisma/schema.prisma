@@ -78,6 +78,7 @@ model Instrument {
   id               Int      @id @default(autoincrement())
   name             String
   slug             String   @unique
+  description      String?
   categoryId       Int      @map("category_id")
   category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   openDay          Int      @default(1) @map("open_day")

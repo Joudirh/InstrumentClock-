@@ -121,6 +121,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
           <div>
             <div class="inst-title">${inst.name} <span class="inst-country">${countryLabel}</span> <span style="font-size:0.75rem;font-weight:normal;color:var(--text-muted)">(${category.name})</span></div>
             <div class="inst-days">${daysDisplay}</div>
+            ${inst.description ? `<div class="inst-description">${inst.description}</div>` : ''}
           </div>
           <div class="inst-status ${isOpen ? 'status-open' : 'status-closed'}">
             ${isOpen ? '🟢 OUVERT' : '🔴 FERMÉ'}
