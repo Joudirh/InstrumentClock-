@@ -866,6 +866,39 @@ select:focus {
   z-index: 3;
 }
 
+/* Légende des plages (instrument_windows) sous la timeline :
+   horaire exact toujours visible, même pour les barres trop étroites. */
+.inst-windows-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  margin-top: 4px;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.inst-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.inst-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.inst-legend-dot.open {
+  background: var(--color-open);
+}
+
+.inst-legend-dot.optimal {
+  background: var(--color-optimal);
+}
+
 /* Desktop override */
 @media (min-width: 768px) {
   .instrument-card {

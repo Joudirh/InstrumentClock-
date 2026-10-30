@@ -62,6 +62,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       let scheduleBarHtml = '';
       let optimalBarHtml = '';
       let daysDisplay = '';
+      let windowsLegend = '';
 
       if (hasWindows) {
         // Présentation depuis la base : une barre par plage (instrument_windows),
@@ -74,6 +75,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
           optimalBarHtml = renderLegacyOptimalBar(inst, targetTz, seasonKey);
         }
         daysDisplay = windowsDaysDisplay(tradingWindows, targetTz, seasonKey, inst.is24_7);
+        windowsLegend = windowsLegendHtml(tradingWindows, optimalWindows, targetTz, seasonKey);
       } else {
         const hasScheduleSegments = Array.isArray(inst.scheduleSegments) && inst.scheduleSegments.length > 0;
         const hasOptimalSegments = Array.isArray(inst.optimalSegments) && inst.optimalSegments.length > 0;
@@ -131,6 +133,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
             ${scheduleBarHtml}
             ${optimalBarHtml}
           </div>
+          ${windowsLegend}
         </div>
       `;
       containerEl.appendChild(card);
@@ -207,24 +210,48 @@ const MIN_LABEL_SPAN_HOURS = 4;
 
 // Barre depuis une plage normalisée (instrument_windows) : conversion du fuseau de la
 // plage vers le fuseau d'affichage, passage de minuit géré, label = « label + HH:MM - HH:MM ».
-const barFromWindow = (w, className, targetTz, seasonKey) => {
-  const crosses = w.endMinute > 1440;
+const windowDecimals = (w, targetTz, seasonKey) => {
   const startDec = w.startMinute === 0 ? 0 : convertHour(w.startMinute / 60, w.timezone, targetTz, seasonKey);
   let endDec;
   if (w.endMinute === 1440) {
     endDec = 24;
-  } else if (crosses) {
+  } else if (w.endMinute > 1440) {
     endDec = convertHour((w.endMinute - 1440) / 60, w.timezone, targetTz, seasonKey);
   } else {
     endDec = convertHour(w.endMinute / 60, w.timezone, targetTz, seasonKey);
   }
+  return { startDec, endDec };
+};
 
+const barFromWindow = (w, className, targetTz, seasonKey) => {
+  const { startDec, endDec } = windowDecimals(w, targetTz, seasonKey);
   const spanH = endDec >= startDec ? endDec - startDec : 24 - startDec + endDec;
   const timeStr = `${formatTime(startDec)} - ${formatTime(endDec)}`;
   const label = w.label ? `${w.label} ${timeStr}` : timeStr;
+  // Le label dans la barre est coupé par overflow:hidden quand la barre est étroite ;
+  // l'horaire reste toujours visible via la légende (windowsLegendHtml).
   const textLabel = spanH >= MIN_LABEL_SPAN_HOURS ? label : '';
   const title = `${w.label ? w.label + ' : ' : ''}${formatMinutes(w.startMinute)} - ${formatMinutes(w.endMinute)} (${w.timezone}) · ${describeDays(w.days)}`;
   return renderTimelineBar(startDec, endDec, className, textLabel, title);
+};
+
+// Légende sous la barre : horaire exact de chaque plage, toujours visible
+// même quand la barre est trop étroite pour afficher son label.
+const windowsLegendHtml = (tradingWindows, optimalWindows, targetTz, seasonKey) => {
+  const item = (w, kind) => {
+    const { startDec, endDec } = windowDecimals(w, targetTz, seasonKey);
+    const dot = kind === 'TRADING' ? 'open' : 'optimal';
+    const name = w.label ?? (kind === 'TRADING' ? 'Séance' : 'Optimal');
+    return (
+      `<span class="inst-legend-item" title="${formatMinutes(w.startMinute)} - ${formatMinutes(w.endMinute)} (${w.timezone})">` +
+      `<i class="inst-legend-dot ${dot}"></i>${name} : ${formatTime(startDec)} - ${formatTime(endDec)} · ${describeDays(w.days)}` +
+      `</span>`
+    );
+  };
+  const trading = tradingWindows.map((w) => item(w, 'TRADING'));
+  const optimal = optimalWindows.map((w) => item(w, 'OPTIMAL'));
+  if (trading.length === 0 && optimal.length === 0) return '';
+  return `<div class="inst-windows-legend">${trading.join('')}${optimal.join('')}</div>`;
 };
 
 // Barre optimale fallback depuis les colonnes legacy (optimal_start_hour/optimal_end_hour).
