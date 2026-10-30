@@ -187,21 +187,27 @@ const renderInstAxis = () => {
   `;
 };
 
-const renderTimelineBar = (start, end, className, textLabel = '', title = '') => {
+const renderTimelineBar = (start, end, className, textLabel = '', title = '', outLabel = '', outTop = 0) => {
+  const outLayer = className.includes('optimal') ? 'out-optimal' : 'out-open';
   const labelHtml = textLabel ? `<span class="inst-bar-label">${textLabel}</span>` : '';
   if (start < end) {
     const left = (start / 24) * 100;
     const width = ((end - start) / 24) * 100;
-    return `<div class="${className}" style="left: ${left}%; width: ${width}%" title="${title}">${labelHtml}</div>`;
+    const outLabelHtml = outLabel ? `<span class="inst-bar-label-out ${outLayer}" style="left: ${left}%; top: ${outTop}px">${outLabel}</span>` : '';
+    return `<div class="${className}" style="left: ${left}%; width: ${width}%" title="${title}">${labelHtml}</div>${outLabelHtml}`;
   } else {
-    // Wraps around midnight
+    // Wraps around midnight : la première moitié peut être très étroite (souvent le cas),
+    // on place donc toujours l'horaire à l'extérieur, ancré au début de la plage.
     const w1 = ((24 - start) / 24) * 100;
     const l1 = (start / 24) * 100;
     const l2 = 0;
     const w2 = (end / 24) * 100;
+    const outText = outLabel || textLabel;
+    const outLabelHtml = outText ? `<span class="inst-bar-label-out ${outLayer}" style="left: ${(start / 24) * 100}%; top: ${outTop || (className.includes('optimal') ? 29 : 10)}px">${outText}</span>` : '';
     return `
-      <div class="${className}" style="left: ${l1}%; width: ${w1}%" title="${title}">${labelHtml}</div>
+      <div class="${className}" style="left: ${l1}%; width: ${w1}%" title="${title}"></div>
       <div class="${className}" style="left: ${l2}%; width: ${w2}%" title="${title}"></div>
+      ${outLabelHtml}
     `;
   }
 };
@@ -226,13 +232,22 @@ const windowDecimals = (w, targetTz, seasonKey) => {
 const barFromWindow = (w, className, targetTz, seasonKey) => {
   const { startDec, endDec } = windowDecimals(w, targetTz, seasonKey);
   const spanH = endDec >= startDec ? endDec - startDec : 24 - startDec + endDec;
-  const timeStr = `${formatTime(startDec)} - ${formatTime(endDec)}`;
+  const isFullDay = w.startMinute === 0 && w.endMinute === 1440;
+  const timeStr = isFullDay ? '24h/24' : `${formatTime(startDec)} - ${formatTime(endDec)}`;
   const label = w.label ? `${w.label} ${timeStr}` : timeStr;
-  // Le label dans la barre est coupé par overflow:hidden quand la barre est étroite ;
-  // l'horaire reste toujours visible via la légende (windowsLegendHtml).
-  const textLabel = spanH >= MIN_LABEL_SPAN_HOURS ? label : '';
+  // Barre étroite (< MIN_LABEL_SPAN_HOURS) : label rendu à l'extérieur de la barre
+  // (outLabel, ancré au bord gauche) pour ne jamais être coupé par overflow:hidden.
   const title = `${w.label ? w.label + ' : ' : ''}${formatMinutes(w.startMinute)} - ${formatMinutes(w.endMinute)} (${w.timezone}) · ${describeDays(w.days)}`;
-  return renderTimelineBar(startDec, endDec, className, textLabel, title);
+  const outTop = className.includes('optimal') ? 29 : 10;
+  return renderTimelineBar(
+    startDec,
+    endDec,
+    className,
+    spanH >= MIN_LABEL_SPAN_HOURS ? label : '',
+    title,
+    spanH < MIN_LABEL_SPAN_HOURS ? timeStr : '',
+    outTop,
+  );
 };
 
 // Légende sous la barre : horaire exact de chaque plage, toujours visible
@@ -242,9 +257,11 @@ const windowsLegendHtml = (tradingWindows, optimalWindows, targetTz, seasonKey) 
     const { startDec, endDec } = windowDecimals(w, targetTz, seasonKey);
     const dot = kind === 'TRADING' ? 'open' : 'optimal';
     const name = w.label ?? (kind === 'TRADING' ? 'Séance' : 'Optimal');
+    const isFullDay = w.startMinute === 0 && w.endMinute === 1440;
+    const timeStr = isFullDay ? '24h/24' : `${formatTime(startDec)} - ${formatTime(endDec)}`;
     return (
       `<span class="inst-legend-item" title="${formatMinutes(w.startMinute)} - ${formatMinutes(w.endMinute)} (${w.timezone})">` +
-      `<i class="inst-legend-dot ${dot}"></i>${name} : ${formatTime(startDec)} - ${formatTime(endDec)} · ${describeDays(w.days)}` +
+      `<i class="inst-legend-dot ${dot}"></i>${name} : ${timeStr} · ${describeDays(w.days)}` +
       `</span>`
     );
   };

@@ -866,6 +866,29 @@ select:focus {
   z-index: 3;
 }
 
+/* Label hors-barre : horaire affiché à partir du bord gauche de la barre,
+   quand la barre est trop étroite pour contenir son texte (overflow:hidden). */
+.inst-bar-label-out {
+  position: absolute;
+  z-index: 4;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  padding-left: 3px;
+}
+
+.inst-bar-label-out.out-optimal {
+  color: #04310f;
+  text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff;
+}
+
+.inst-bar-label-out.out-open {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
 /* Légende des plages (instrument_windows) sous la timeline :
    horaire exact toujours visible, même pour les barres trop étroites. */
 .inst-windows-legend {
