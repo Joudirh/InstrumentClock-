@@ -28,6 +28,52 @@ model Category {
   @@map("categories")
 }
 
+enum Region {
+  ASIA
+  EUROPE
+  AMERICA
+  OCEANIA
+  AFRICA
+  GLOBAL
+}
+
+enum WindowKind {
+  TRADING
+  OPTIMAL
+}
+
+model Session {
+  id          Int          @id @default(autoincrement())
+  slug        String       @unique
+  name        String
+  region      Region
+  timezone    String
+  is247       Boolean      @default(false) @map("is_24_7")
+  flag        String?
+  color       String?
+  position    Int          @default(0)
+  instruments Instrument[]
+
+  @@map("sessions")
+}
+
+model InstrumentWindow {
+  id           Int        @id @default(autoincrement())
+  instrumentId Int        @map("instrument_id")
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  kind         WindowKind
+  days         Int[]
+  startMinute  Int        @map("start_minute")
+  endMinute    Int        @map("end_minute")
+  timezone     String
+  label        String?
+  position     Int        @default(0)
+
+  @@index([instrumentId, kind])
+  @@unique([instrumentId, kind, position])
+  @@map("instrument_windows")
+}
+
 model Instrument {
   id               Int      @id @default(autoincrement())
   name             String
@@ -45,9 +91,14 @@ model Instrument {
   is247            Boolean  @default(false) @map("is_24_7")
   scheduleSegments Json?    @map("schedule_segments")
   optimalSegments  Json?    @map("optimal_segments")
+  sessionId        Int      @map("session_id")
+  session          Session  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  windows          InstrumentWindow[]
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
+  @@index([categoryId])
+  @@index([sessionId])
   @@map("instruments")
 }
 

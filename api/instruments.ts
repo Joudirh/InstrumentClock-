@@ -11,7 +11,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const categories = await prisma.category.findMany({
       orderBy: { position: "asc" },
       include: {
-        instruments: { orderBy: { name: "asc" } },
+        instruments: {
+          orderBy: { name: "asc" },
+          include: {
+            session: true,
+            windows: { orderBy: [{ kind: "asc" }, { position: "asc" }] },
+          },
+        },
       },
     });
 

@@ -76,7 +76,31 @@ export const isWeekdayInRange = (weekday, openDay, closeDay) => {
   return weekday >= openDay || weekday <= closeDay;
 };
 
+const previousDay = (day) => (day === 1 ? 7 : day - 1);
+
+// Plage normalisée (instrument_windows) : jours de début, start/end en minutes (0-2880),
+// passage de minuit géré. now : DateTime Luxon.
+export const isWindowOpen = (w, now) => {
+  if (!Array.isArray(w.days) || w.days.length === 0) return false;
+  const local = now.setZone(w.timezone);
+  const day = local.weekday; // Luxon : 1 = lundi … 7 = dimanche
+  const minuteOfDay = local.hour * 60 + local.minute + local.second / 60;
+
+  if (w.endMinute <= 1440) {
+    // Fin le même jour calendaire (1440 = minuit inclus).
+    return w.days.includes(day) && minuteOfDay >= w.startMinute && minuteOfDay < w.endMinute;
+  }
+  // Passe minuit : fin le jour suivant (endMinute > 1440).
+  const endLocal = w.endMinute - 1440;
+  if (w.days.includes(day) && minuteOfDay >= w.startMinute) return true;
+  return w.days.includes(previousDay(day)) && minuteOfDay < endLocal;
+};
+
 export const isInstrumentOpen = (instrument, now = DateTime.now()) => {
+  if (Array.isArray(instrument.windows) && instrument.windows.length) {
+    return instrument.windows.some((w) => w.kind === 'TRADING' && isWindowOpen(w, now));
+  }
+
   if (Array.isArray(instrument.scheduleSegments) && instrument.scheduleSegments.length) {
     if (!instrument.openDay || !instrument.closeDay) return false;
     const utc = now.setZone('UTC');
@@ -127,9 +151,13 @@ export const isTimeInPeriod = (checkTime, start, end) => {
   }
 };
 
-// Indique si l'heure actuelle (dans le fuseau optimal de l'instrument)
-// tombe dans la plage horaire optimale de trading.
+// Indique si l'instant est dans une plage OPTIMAL (relation instrument_windows),
+// en retombant sur les colonnes legacy si aucune plage normalisée n'est disponible.
 export const isOptimalNow = (instrument, now = DateTime.now()) => {
+  if (Array.isArray(instrument.windows) && instrument.windows.length) {
+    return instrument.windows.some((w) => w.kind === 'OPTIMAL' && isWindowOpen(w, now));
+  }
+
   const start = instrument.optimalStartHour;
   const end = instrument.optimalEndHour;
   if (start === undefined || end === undefined) return false;
