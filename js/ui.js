@@ -338,25 +338,31 @@ const renderInstAxis = () => {
 const renderTimelineBar = (start, end, className, textLabel = '', title = '', outLabel = '', outTop = 0) => {
   const outLayer = className.includes('optimal') ? 'out-optimal' : 'out-open';
   const labelHtml = textLabel ? `<span class="inst-bar-label">${textLabel}</span>` : '';
+  const barTop = className.includes('optimal') ? 27 : 8;
+  const labelTop = (outTop || barTop + 2) - barTop;
+  const barHtml = (left, width, label = '', alignRight = false, includeTextLabel = true) => {
+    const hasOutLabel = Boolean(label);
+    const barClass = hasOutLabel ? `${className} has-out-label` : className;
+    const outLabelHtml = hasOutLabel
+      ? `<span class="inst-bar-label-out ${outLayer}${alignRight ? ' at-right' : ''}" style="top: ${labelTop}px">${label}</span>`
+      : '';
+    return `<div class="${barClass}" style="left: ${left}%; width: ${width}%" title="${title}">${includeTextLabel ? labelHtml : ''}${outLabelHtml}</div>`;
+  };
+
   if (start < end) {
     const left = (start / 24) * 100;
     const width = ((end - start) / 24) * 100;
-    const outLabelHtml = outLabel ? `<span class="inst-bar-label-out ${outLayer}" style="left: ${left}%; top: ${outTop}px">${outLabel}</span>` : '';
-    return `<div class="${className}" style="left: ${left}%; width: ${width}%" title="${title}">${labelHtml}</div>${outLabelHtml}`;
+    return barHtml(left, width, outLabel, left >= 75);
   } else {
     // Wraps around midnight : la première moitié peut être très étroite (souvent le cas),
-    // on place donc toujours l'horaire à l'extérieur, ancré au début de la plage.
+    // place the external label on the wider segment so it stays inside the timeline.
     const w1 = ((24 - start) / 24) * 100;
     const l1 = (start / 24) * 100;
-    const l2 = 0;
     const w2 = (end / 24) * 100;
     const outText = outLabel || textLabel;
-    const outLabelHtml = outText ? `<span class="inst-bar-label-out ${outLayer}" style="left: ${(start / 24) * 100}%; top: ${outTop || (className.includes('optimal') ? 29 : 10)}px">${outText}</span>` : '';
-    return `
-      <div class="${className}" style="left: ${l1}%; width: ${w1}%" title="${title}"></div>
-      <div class="${className}" style="left: ${l2}%; width: ${w2}%" title="${title}"></div>
-      ${outLabelHtml}
-    `;
+    const labelOnFirstSegment = w1 >= w2;
+    return barHtml(l1, w1, labelOnFirstSegment ? outText : '', labelOnFirstSegment, false)
+      + barHtml(0, w2, labelOnFirstSegment ? '' : outText, false, false);
   }
 };
 
