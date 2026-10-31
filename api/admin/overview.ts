@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { prisma } from "../../lib/prisma";
-import { requireAuth } from "../../lib/session";
+import { requireRole } from "../../lib/session";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!(await requireAuth(req, res))) return;
+  if (!(await requireRole(req, res, "ADMIN"))) return;
 
   try {
     const [users, sessions, categories, instruments, windows, assets, forexSessions, seasons] = await Promise.all([

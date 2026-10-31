@@ -1512,3 +1512,28 @@ footer {
     display: none;
   }
 }
+
+/* --- Espace utilisateur (/account) --- */
+.account-body .navbar { border-bottom: 1px solid var(--border-color); }
+.account-section { margin: 1.5rem auto; }
+.account-intro { margin: 0 0 1rem; color: var(--text-muted); font-size: 0.9rem; }
+.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.account-panel { background: var(--bg-color-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem; }
+.account-panel h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+.account-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem; }
+.account-field label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+.account-value { font-size: 0.9rem; word-break: break-all; }
+.account-error { font-size: 0.8rem; color: var(--color-closed); margin-bottom: 0.5rem; }
+.account-error.hidden { display: none; }
+.btn-account { width: 100%; padding: 0.55rem; border: 1px solid var(--border-color); background: var(--bg-color-card); color: var(--text-main); border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
+.btn-account:hover { border-color: var(--color-primary); }
+.account-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.account-list-item { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color-main); }
+.account-list-title { flex: 1; font-size: 0.85rem; }
+.account-list-badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.account-list-badge.active { background: var(--color-optimal); color: #fff; }
+.account-list-badge.inactive { background: var(--text-muted); color: #fff; }
+.account-list-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+.account-list button { font-size: 0.7rem; padding: 0.2rem 0.5rem; border: 1px solid var(--border-color); background: var(--bg-color-card); color: var(--text-main); border-radius: var(--radius-md); cursor: pointer; }
+.account-list button:hover { border-color: var(--color-primary); }
+.empty-state { font-size: 0.85rem; color: var(--text-muted); padding: 0.75rem; text-align: center; }

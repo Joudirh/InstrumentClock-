@@ -8,15 +8,15 @@ function passphraseForModal(user, isEdit) {
     <div class="form-grid">
       <label class="field"><span>Nom</span><input id="u-name" type="text" value="${esc(user?.name ?? '')}" required></label>
       <label class="field"><span>Rôle</span>
-        <select id="u-role" class="toolbar-select" style="padding:11px 12px;">
-          <option value="EDITOR" ${user?.role !== 'ADMIN' ? 'selected' : ''}>Editeur</option>
-          <option value="ADMIN" ${user?.role === 'ADMIN' ? 'selected' : ''}>Administrateur</option>
-        </select>
+          <select id="u-role" class="toolbar-select" style="padding:11px 12px;">
+            <option value="USER" ${user?.role !== 'ADMIN' ? 'selected' : ''}>Utilisateur</option>
+            <option value="ADMIN" ${user?.role === 'ADMIN' ? 'selected' : ''}>Administrateur</option>
+          </select>
       </label>
       <label class="field full"><span>Email</span><input id="u-email" type="email" value="${esc(user?.email ?? '')}" required></label>
       <label class="field full">
         <span>${isEdit ? 'Nouveau mot de passe (laisser vide pour conserver)' : 'Mot de passe'}</span>
-        <input id="u-password" type="password" autocomplete="new-password" placeholder="${isEdit ? '••••••••' : '6 caractères minimum'}">
+        <input id="u-password" type="password" autocomplete="new-password" placeholder="${isEdit ? '••••••••' : '8 caractères minimum'}">
       </label>
     </div>`;
 }
@@ -61,7 +61,7 @@ export async function render(content) {
             <tr>
               <td><div class="cell-identity"><strong>${esc(u.name)}${u.email === me.email ? ' <span class="muted">(vous)</span>' : ''}</strong><small>Inscrit le ${new Date(u.createdAt).toLocaleDateString('fr-FR')}</small></div></td>
               <td class="muted">${esc(u.email)}</td>
-              <td><span class="badge ${u.role === 'ADMIN' ? 'badge-admin-role' : ''}">${u.role === 'ADMIN' ? 'Administrateur' : 'Editeur'}</span></td>
+              <td><span class="badge ${u.role === 'ADMIN' ? 'badge-admin-role' : ''}">${u.role === 'ADMIN' ? 'Administrateur' : 'Utilisateur'}</span></td>
               <td><span class="badge ${u.isActive ? 'badge-247' : 'badge-off'}">${u.isActive ? 'Actif' : 'Désactivé'}</span></td>
               <td>
                 <div class="cell-actions">

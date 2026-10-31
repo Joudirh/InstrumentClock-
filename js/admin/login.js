@@ -28,6 +28,7 @@ form.addEventListener('submit', async (event) => {
       body: JSON.stringify({
         email: document.getElementById('login-email').value,
         password: passwordInput.value,
+        role: 'ADMIN',
       }),
     });
     const data = await res.json().catch(() => ({}));

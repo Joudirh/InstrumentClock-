@@ -20,19 +20,21 @@ model Season {
 
 enum Role {
   ADMIN
-  EDITOR
+  USER
 }
 
 model User {
   id           Int             @id @default(autoincrement())
   email        String          @unique
   name         String
-  role         Role            @default(EDITOR)
+  role         Role            @default(USER)
   passwordHash String          @map("password_hash")
   isActive     Boolean         @default(true) @map("is_active")
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
   authTokens   UserAuthToken[]
+  favorites    InstrumentFavorite[]
+  alerts       MarketAlert[]
 
   @@map("users")
 }
@@ -126,6 +128,7 @@ model Instrument {
   sessionId        Int      @map("session_id")
   session          Session  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   windows          InstrumentWindow[]
+  favorites        InstrumentFavorite[]
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -158,4 +161,28 @@ model Asset {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("assets")
+}
+
+model InstrumentFavorite {
+  id           Int      @id @default(autoincrement())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int      @map("user_id")
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  instrumentId Int      @map("instrument_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, instrumentId])
+  @@map("instrument_favorites")
+}
+
+model MarketAlert {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int      @map("user_id")
+  instrumentId Int     @map("instrument_id")
+  kind        String   @default("optimal-open") // optimal-open | optimal-close
+  active      Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("market_alerts")
 }

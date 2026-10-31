@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { prisma } from "../../lib/prisma";
 import { hashPassword } from "../../lib/password";
-import { requireAuth } from "../../lib/session";
+import { requireRole } from "../../lib/session";
 
 function bodyOf(req: VercelRequest): Record<string, unknown> {
   return typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};
@@ -16,7 +16,7 @@ function publicUser(u: { id: number; email: string; name: string; role: string; 
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const admin = await requireAuth(req, res);
+  const admin = await requireRole(req, res, "ADMIN");
   if (!admin) return;
 
   try {
@@ -31,10 +31,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
       const name = typeof body.name === "string" ? body.name.trim() : "";
       const password = typeof body.password === "string" ? body.password : "";
-      const role = body.role === "ADMIN" ? "ADMIN" : "EDITOR";
+      const role = body.role === "ADMIN" ? "ADMIN" : "USER";
       if (!email || !email.includes("@")) errors.push("Email invalide");
       if (!name) errors.push("Le nom est requis");
-      if (password.length < 6) errors.push("Le mot de passe doit faire 6 caractères minimum");
+      if (password.length < 8) errors.push("Le mot de passe doit faire 8 caractères minimum");
       if (errors.length) return badRequest(res, errors);
       const exists = await prisma.user.findUnique({ where: { email } });
       if (exists) return badRequest(res, ["Cet email est déjà utilisé"]);
@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const data: {
         email?: string;
         name?: string;
-        role?: "ADMIN" | "EDITOR";
+        role?: "ADMIN" | "USER";
         isActive?: boolean;
         passwordHash?: string;
       } = {};
@@ -70,9 +70,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else data.email = email;
         }
       }
-      if (body.role === "ADMIN" || body.role === "EDITOR") {
+      if (body.role === "ADMIN" || body.role === "USER") {
         // Interdit de retirer le dernier administrateur actif.
-        if (target.role === "ADMIN" && target.isActive && body.role === "EDITOR") {
+        if (target.role === "ADMIN" && target.isActive && body.role === "USER") {
           const otherAdmins = await prisma.user.count({
             where: { role: "ADMIN", isActive: true, id: { not: id } },
           });
@@ -95,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const password = typeof body.password === "string" ? body.password : "";
       if (password) {
-        if (password.length < 6) errors.push("Le mot de passe doit faire 6 caractères minimum");
+        if (password.length < 8) errors.push("Le mot de passe doit faire 8 caractères minimum");
         else data.passwordHash = hashPassword(password);
       }
       if (errors.length) return badRequest(res, errors);

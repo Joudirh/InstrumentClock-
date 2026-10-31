@@ -76,14 +76,19 @@ type Statusable = {
   status: { (code: number): Statusable & { json: (data: unknown) => void } };
 };
 
-/** Garde-fou pour les routes d'administration : répond 401 et renvoie false si non authentifié. */
-export async function requireAuth(
+/** Garde-fou par rôle : 401 si non authentifié, 403 si rôle incorrect. */
+export async function requireRole(
   req: { headers: Record<string, string | string[] | undefined> },
-  res: Statusable
+  res: Statusable,
+  role: "ADMIN" | "USER"
 ): Promise<AuthUser | null> {
   const user = await getSessionUser(req);
   if (!user) {
     res.status(401).json({ error: "Authentification requise" });
+    return null;
+  }
+  if (user.role !== role) {
+    res.status(403).json({ error: "Accès refusé" });
     return null;
   }
   return user;

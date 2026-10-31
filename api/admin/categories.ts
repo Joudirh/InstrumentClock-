@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { prisma } from "../../lib/prisma";
 import { slugify, uniqueSlug } from "../../lib/admin-data";
-import { requireAuth } from "../../lib/session";
+import { requireRole } from "../../lib/session";
 
 function bodyOf(req: VercelRequest): Record<string, unknown> {
   return typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};
@@ -12,7 +12,7 @@ function badRequest(res: VercelResponse, errors: string[]) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!(await requireAuth(req, res))) return;
+  if (!(await requireRole(req, res, "ADMIN"))) return;
 
   try {
     if (req.method === "GET") {
