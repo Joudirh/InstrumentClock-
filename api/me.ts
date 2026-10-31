@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { prisma } from "../lib/prisma";
-import { requireRole } from "../lib/session";
-import { hashPassword } from "../lib/password";
+import { prisma } from "../lib/prisma.js";
+import { requireRole } from "../lib/session.js";
+import { hashPassword } from "../lib/password.js";
 
 function bodyOf(req: VercelRequest): Record<string, unknown> {
   return typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};

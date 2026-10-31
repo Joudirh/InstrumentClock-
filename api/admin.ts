@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { prisma } from "../lib/prisma";
-import { hashPassword } from "../lib/password";
-import { requireRole } from "../lib/session";
+import { prisma } from "../lib/prisma.js";
+import { hashPassword } from "../lib/password.js";
+import { requireRole } from "../lib/session.js";
 import {
   deriveLegacyColumns,
   slugify,
@@ -9,7 +9,7 @@ import {
   uniqueSlug,
   validateWindows,
   type WindowInput,
-} from "../lib/admin-data";
+} from "../lib/admin-data.js";
 
 function bodyOf(req: VercelRequest): Record<string, unknown> {
   return typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};

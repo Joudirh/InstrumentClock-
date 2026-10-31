@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaClient } from "./generated/prisma/client";
+import { PrismaClient } from "./generated/prisma/client.js";
 
 // Prisma 7 requires a driver adapter. Neon's adapter uses the pooled
 // DATABASE_URL and works on Vercel's serverless runtime.

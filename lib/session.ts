@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { prisma } from "./prisma";
+import { prisma } from "./prisma.js";
 
 export const SESSION_COOKIE = "ic_session";
 const SESSION_TTL_DAYS = 7;

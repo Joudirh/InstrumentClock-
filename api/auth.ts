@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { prisma } from "../lib/prisma";
-import { verifyPassword } from "../lib/password";
-import { hashPassword } from "../lib/password";
+import { prisma } from "../lib/prisma.js";
+import { verifyPassword } from "../lib/password.js";
+import { hashPassword } from "../lib/password.js";
 import {
   createSession,
   destroySession,
@@ -9,8 +9,8 @@ import {
   sessionCookieHeader,
   clearSessionCookieHeader,
   isSecureRequest,
-} from "../lib/session";
-import { rateLimit, clientIp, WINDOW_MS } from "../lib/rate-limit";
+} from "../lib/session.js";
+import { rateLimit, clientIp, WINDOW_MS } from "../lib/rate-limit.js";
 
 const DEBUG = process.env.DEBUG_API === "1";
 
