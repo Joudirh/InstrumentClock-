@@ -1712,9 +1712,17 @@ footer {
   flex-shrink: 0;
 }
 
-@media (max-width: 640px) {
+.sort-btn-label-short {
+  display: none;
+}
+
+@media (max-width: 767px) {
   .sort-btn-label {
     display: none;
+  }
+
+  .sort-btn-label-short {
+    display: inline;
   }
 }
 
