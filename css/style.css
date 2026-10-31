@@ -827,24 +827,65 @@ select:focus {
   color: var(--text-muted);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .filters-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
     gap: 0.5rem;
   }
 
-  .category-filter,
-  .status-filter {
-    flex: 1 1 0;
+  .filters-bar > * {
+    min-width: 0;
   }
 
-  .category-filter select,
-  .status-filter select {
-    width: 100%;
+  .category-filter {
+    order: 1;
+  }
+
+  .status-filter {
+    order: 2;
+  }
+
+  .sort-btn {
+    order: 3;
+  }
+
+  .optimal-filter {
+    order: 4;
   }
 
   .search-filter {
-    flex: 1 1 100%;
-    order: 3;
+    order: 5;
+  }
+
+  .bell-filter {
+    order: 6;
+  }
+
+  .category-filter select,
+  .status-filter select,
+  .search-filter input {
+    width: 100%;
+  }
+
+  .sort-btn,
+  .optimal-filter {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .optimal-filter {
+    gap: 0.3rem;
+    padding: 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .bell-filter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
