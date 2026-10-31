@@ -21,26 +21,18 @@ export const setupLogin = (loginBtn) => {
       <form id="login-modal-form" autocomplete="on" novalidate data-mode="login">
         <input type="hidden" name="role" value="USER">
 
-        <label class="field" data-for="login">
+        <label class="field" data-for="both">
           <span>Email</span>
           <input id="login-modal-email" name="email" type="email" placeholder="email@example.com" required autocomplete="username">
         </label>
-        <label class="field" data-for="login">
+        <label class="field" data-for="both">
           <span>Mot de passe</span>
           <input id="login-modal-password" name="password" type="password" placeholder="••••••••" required autocomplete="current-password">
         </label>
 
-        <label class="field" data-for="register" class="hidden">
+        <label class="field hidden" data-for="register">
           <span>Nom</span>
           <input id="login-modal-name" name="name" placeholder="Votre nom" required autocomplete="name">
-        </label>
-        <label class="field" data-for="register" class="hidden">
-          <span>Email</span>
-          <input id="login-modal-register-email" name="email" type="email" placeholder="email@example.com" required autocomplete="username">
-        </label>
-        <label class="field" data-for="register" class="hidden">
-          <span>Mot de passe</span>
-          <input id="login-modal-register-password" name="password" type="password" placeholder="••••••••" required autocomplete="new-password">
         </label>
 
         <button type="submit" class="btn-admin btn-admin-primary" id="login-modal-submit">
@@ -49,9 +41,6 @@ export const setupLogin = (loginBtn) => {
         <p class="login-modal-toggle">
           <span id="login-modal-toggle-text">Pas de compte ?</span>
           <button type="button" id="login-modal-toggle-btn" class="link-btn">Créer un compte</button>
-        </p>
-        <p class="login-modal-admin">
-          Administration : <a href="/admin">connexion admin</a>
         </p>
       </form>
     </div>
@@ -64,7 +53,7 @@ export const setupLogin = (loginBtn) => {
   const toggleBtn = modal.querySelector('#login-modal-toggle-btn');
   const toggleText = modal.querySelector('#login-modal-toggle-text');
 
-  const fieldsLogin = modal.querySelectorAll('[data-for="login"]');
+  const fieldsBoth = modal.querySelectorAll('[data-for="both"]');
   const fieldsRegister = modal.querySelectorAll('[data-for="register"]');
 
   const open = () => modal.classList.remove('hidden');
@@ -79,7 +68,7 @@ export const setupLogin = (loginBtn) => {
   const setMode = (m) => {
     mode = m;
     form.dataset.mode = m;
-    fieldsLogin.forEach((f) => f.classList.toggle('hidden', m !== 'login'));
+    fieldsBoth.forEach((f) => f.classList.remove('hidden'));
     fieldsRegister.forEach((f) => f.classList.toggle('hidden', m !== 'register'));
     submitBtn.textContent = m === 'login' ? 'Se connecter' : 'Créer mon compte';
     toggleText.textContent = m === 'login' ? 'Pas de compte ?' : 'Déjà un compte ?';
