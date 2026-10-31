@@ -43,9 +43,48 @@ const scrollTopBtn = document.getElementById('scroll-top');
 // Cloche "marchés ouverts" : compte, badge vert/rouge, hovertext et panneau déroulant.
 const updateMarketBell = setupMarketBell(() => AppData);
 
-// Bouton de connexion/déconnexion de la navbar (modale + cookie de session).
+// Boutons de connexion/déconnexion de la navbar (modale + cookie de session).
 const loginBtn = document.getElementById('login-btn');
-if (loginBtn) setupLogin(loginBtn);
+const mobileLoginBtn = document.getElementById('mobile-login-btn');
+setupLogin(loginBtn, mobileLoginBtn);
+
+// Menu mobile : ouverture/fermeture du panneau déroulant.
+const setupNavbarMenu = () => {
+  const toggle = document.getElementById('nav-toggle');
+  const menu = document.getElementById('navbar-menu');
+  if (!toggle || !menu) return;
+
+  const setOpen = (open) => {
+    menu.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Fermer le menu' : 'Ouvrir le menu');
+  };
+
+  toggle.addEventListener('click', () => {
+    setOpen(!menu.classList.contains('is-open'));
+  });
+
+  menu.querySelectorAll('a, button').forEach((item) => {
+    item.addEventListener('click', () => setOpen(false));
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!menu.classList.contains('is-open')) return;
+    if (menu.contains(event.target) || toggle.contains(event.target)) return;
+    setOpen(false);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setOpen(false);
+  });
+
+  const desktopQuery = window.matchMedia('(min-width: 768px)');
+  desktopQuery.addEventListener('change', (event) => {
+    if (event.matches) setOpen(false);
+  });
+};
+
+setupNavbarMenu();
 
 // --- Initialization ---
 const init = async () => {

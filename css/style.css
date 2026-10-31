@@ -120,6 +120,61 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+.navbar-logo-short {
+  display: none;
+  background: linear-gradient(135deg, var(--color-primary), #db2777);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nav-toggle:hover {
+  background-color: var(--border-color);
+}
+
+.nav-toggle-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 20px;
+}
+
+.nav-toggle-box span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: var(--transition);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-box span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-box span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-box span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 .navbar-menu {
   display: flex;
   align-items: center;
@@ -157,6 +212,10 @@ body {
   flex-wrap: wrap;
 }
 
+.navbar-mobile-login {
+  display: none;
+}
+
 /* Barre d'outils indépendante : horloge + saison + fuseau horaire.
    Même largeur (max-w) et même alignement que les sections du main. */
 .tools-bar {
@@ -172,7 +231,7 @@ body {
 .tools-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 1rem;
   padding: 0.65rem 1rem;
   flex-wrap: wrap;
@@ -181,7 +240,7 @@ body {
 .tools-bar .system-clock {
   padding: 0.35rem 0.7rem;
   min-width: 120px;
-  margin-right: auto;
+  text-align: center;
 }
 
 .tools-bar .clock-time {
@@ -325,37 +384,108 @@ select:focus {
 /* Mobile header */
 @media (max-width: 767px) {
   .navbar-inner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
+    position: relative;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+
+  .navbar-logo {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .navbar-logo-text {
     display: none;
   }
 
+  .navbar-logo-short {
+    display: inline;
+  }
+
   .navbar-menu {
-    justify-content: center;
-    gap: 0.1rem;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 1rem;
+    right: 1rem;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+    padding: 0.6rem;
+    background: var(--bg-color-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 120;
+  }
+
+  .navbar-menu.is-open {
+    display: flex;
+  }
+
+  .navbar-menu li {
+    width: 100%;
   }
 
   .navbar-link {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.82rem;
+    display: block;
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .navbar-mobile-login {
+    display: block;
+    margin-top: 0.35rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .mobile-login-btn {
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .mobile-login-btn:hover {
+    background: var(--color-primary-hover);
   }
 
   .navbar-right {
-    justify-content: center;
-    gap: 0.5rem;
+    justify-content: flex-end;
+    gap: 0.15rem;
+    margin-left: auto;
+    flex-wrap: nowrap;
+  }
+
+  #login-btn.login-btn-icon {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: flex;
   }
 
   .tools-inner {
     justify-content: center;
+    text-align: center;
     gap: 0.5rem;
   }
 
   .tools-bar .system-clock {
     min-width: 0;
+    text-align: center;
   }
 
   .tools-bar .control-group span {

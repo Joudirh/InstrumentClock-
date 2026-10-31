@@ -1,6 +1,11 @@
-// Module de login/inscription intégré à la navbar (bouton #login-btn).
+// Module de login/inscription intégré à la navbar (boutons #login-btn et #mobile-login-btn).
 // Réservé aux utilisateurs (rôle USER). L'admin se connecte uniquement via /admin.
-export const setupLogin = (loginBtn) => {
+export const setupLogin = (...buttons) => {
+  const loginButtons = buttons.filter(Boolean);
+  if (!loginButtons.length) return;
+
+  const iconButtons = loginButtons.filter((btn) => btn.classList.contains('login-btn-icon'));
+  const textButtons = loginButtons.filter((btn) => !btn.classList.contains('login-btn-icon'));
   const modal = document.createElement('div');
   modal.className = 'login-modal hidden';
   modal.setAttribute('role', 'dialog');
@@ -128,17 +133,27 @@ export const setupLogin = (loginBtn) => {
   let userRole = 'USER';
 
   const syncButtonLabel = () => {
-    if (connected) {
-      loginBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`;
-      loginBtn.title = userRole === 'ADMIN' ? 'Administration' : 'Mon compte';
-      loginBtn.setAttribute('aria-label', userRole === 'ADMIN' ? 'Administration' : 'Mon compte');
-    } else {
-      loginBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>`;
-      loginBtn.title = 'Connexion';
-      loginBtn.setAttribute('aria-label', 'Connexion');
-    }
+    iconButtons.forEach((btn) => {
+      if (connected) {
+        btn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`;
+        btn.title = userRole === 'ADMIN' ? 'Administration' : 'Mon compte';
+        btn.setAttribute('aria-label', userRole === 'ADMIN' ? 'Administration' : 'Mon compte');
+      } else {
+        btn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>`;
+        btn.title = 'Connexion';
+        btn.setAttribute('aria-label', 'Connexion');
+      }
+    });
+    const label = connected
+      ? (userRole === 'ADMIN' ? 'Administration' : 'Mon compte')
+      : 'Connexion';
+    textButtons.forEach((btn) => {
+      btn.textContent = label;
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
+    });
   };
 
   syncButtonLabel();
@@ -157,7 +172,7 @@ export const setupLogin = (loginBtn) => {
     syncButtonLabel();
   })();
 
-  loginBtn.addEventListener('click', async () => {
+  const handleLoginClick = async () => {
     if (connected) {
       try {
         await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
@@ -169,5 +184,7 @@ export const setupLogin = (loginBtn) => {
     } else {
       open();
     }
-  });
+  };
+
+  loginButtons.forEach((btn) => btn.addEventListener('click', handleLoginClick));
 };
