@@ -12,6 +12,8 @@ import {
 } from "../lib/session";
 import { rateLimit, clientIp, WINDOW_MS } from "../lib/rate-limit";
 
+const DEBUG = process.env.DEBUG_API === "1";
+
 function bodyOf(req: VercelRequest): Record<string, unknown> {
   return typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};
 }
@@ -52,8 +54,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const token = await createSession(user.id);
       res.setHeader("Set-Cookie", sessionCookieHeader(token, isSecureRequest(req as unknown as VercelRequest)));
       return json(res, 200, { user: { id: user.id, email: user.email, name: user.name, role: user.role } });
-    } catch {
-      return json(res, 500, { error: "Erreur de connexion" });
+    } catch (error: any) {
+      console.error("[auth/login]", error);
+      return json(res, 500, { error: "Erreur de connexion", detail: DEBUG ? String(error?.message ?? error) : undefined });
     }
   }
 
@@ -82,8 +85,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const token = await createSession(user.id);
       res.setHeader("Set-Cookie", sessionCookieHeader(token, isSecureRequest(req as unknown as VercelRequest)));
       return json(res, 201, { user: { id: user.id, email: user.email, name: user.name, role: user.role } });
-    } catch {
-      return json(res, 500, { error: "Erreur d'inscription" });
+    } catch (error: any) {
+      console.error("[auth/register]", error);
+      return json(res, 500, { error: "Erreur d'inscription", detail: DEBUG ? String(error?.message ?? error) : undefined });
     }
   }
 
@@ -94,8 +98,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (token) await destroySession(token);
       res.setHeader("Set-Cookie", clearSessionCookieHeader());
       return json(res, 200, { ok: true, loggedOut: true });
-    } catch {
-      return json(res, 500, { error: "Erreur de déconnexion" });
+    } catch (error: any) {
+      console.error("[auth/logout]", error);
+      return json(res, 500, { error: "Erreur de déconnexion", detail: DEBUG ? String(error?.message ?? error) : undefined });
     }
   }
 
@@ -105,8 +110,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const user = await getSessionUser(req as unknown as VercelRequest);
       if (!user) return json(res, 401, { error: "Authentification requise" });
       return json(res, 200, { user });
-    } catch {
-      return json(res, 500, { error: "Erreur de session" });
+    } catch (error: any) {
+      console.error("[auth/session]", error);
+      return json(res, 500, { error: "Erreur de session", detail: DEBUG ? String(error?.message ?? error) : undefined });
     }
   }
 
