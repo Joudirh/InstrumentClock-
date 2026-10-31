@@ -4,6 +4,11 @@
   "cleanUrls": true,
   "buildCommand": "prisma generate && prisma migrate deploy && vite build",
   "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/auth/:path*", "destination": "/api/auth?__path=:path*" },
+    { "source": "/api/me/:path*", "destination": "/api/me?__path=:path*" },
+    { "source": "/api/admin/:path*", "destination": "/api/admin?__path=:path*" }
+  ],
   "functions": {
     "api/**/*.ts": {
       "memory": 512,

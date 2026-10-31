@@ -14,7 +14,19 @@ function apiDevMiddleware() {
       server.middlewares.use(async (req, res, next) => {
         if (!req.url || !req.url.startsWith("/api/")) return next();
 
-        const name = req.url.split("?")[0].replace("/api/", "") || "index";
+        const rawName = req.url.split("?")[0].replace("/api/", "") || "index";
+
+        // Regroupement des API pour réduire le nombre de fonctions serverless
+        // (plan Hobby Vercel: max 12). auth/me/admin sont des routers uniques
+        // qui reçoivent le sous-chemin via __path en query.
+        const groupMap = { auth: "auth", me: "me", admin: "admin" };
+        let moduleName = rawName;
+        let extraPath = "";
+        const firstSegment = rawName.split("/")[0];
+        if (groupMap[firstSegment]) {
+          moduleName = groupMap[firstSegment];
+          extraPath = rawName.slice(firstSegment.length + 1);
+        }
 
         // Vercel-style response helpers (res.status(...).json(...)).
         res.status = (code) => {
@@ -42,7 +54,9 @@ function apiDevMiddleware() {
           }
         }
         const requestUrl = new URL(req.url, "http://localhost");
-        req.query = Object.fromEntries(requestUrl.searchParams);
+        const query = Object.fromEntries(requestUrl.searchParams);
+        if (extraPath) query.__path = extraPath;
+        req.query = query;
         req.cookies = Object.fromEntries(
           (req.headers.cookie || "")
             .split(";")
@@ -54,7 +68,7 @@ function apiDevMiddleware() {
         );
 
         try {
-          const mod = await server.ssrLoadModule(`/api/${name}.ts`);
+          const mod = await server.ssrLoadModule(`/api/${moduleName}.ts`);
           if (typeof mod.default !== "function") {
             res.statusCode = 404;
             return res.end("Not found");
