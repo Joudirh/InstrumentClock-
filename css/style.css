@@ -829,8 +829,8 @@ select:focus {
 
 @media (max-width: 767px) {
   .filters-bar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     align-items: stretch;
     gap: 0.5rem;
   }
@@ -863,6 +863,24 @@ select:focus {
     order: 6;
   }
 
+  .category-filter,
+  .status-filter,
+  .sort-btn,
+  .optimal-filter {
+    flex: 1 1 calc(50% - 0.25rem);
+  }
+
+  .search-filter {
+    flex: 1 1 0;
+  }
+
+  .bell-filter {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .category-filter select,
   .status-filter select,
   .search-filter input {
@@ -871,7 +889,6 @@ select:focus {
 
   .sort-btn,
   .optimal-filter {
-    width: 100%;
     justify-content: center;
     text-align: center;
   }
@@ -882,10 +899,12 @@ select:focus {
     font-size: 0.8rem;
   }
 
-  .bell-filter {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .toggle-label {
+    display: none;
+  }
+
+  .toggle-label-short {
+    display: inline;
   }
 }
 
@@ -908,6 +927,10 @@ select:focus {
 
 .optimal-filter:hover {
   border-color: var(--color-optimal);
+}
+
+.toggle-label-short {
+  display: none;
 }
 
 .optimal-filter input {
