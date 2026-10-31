@@ -1,4 +1,8 @@
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { defineConfig } from "vite";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Serve the Vercel API handlers (api/*.ts) during `vite dev`, so the local
 // front-end can read the Neon database. In production Vercel runs these files.
@@ -25,6 +29,30 @@ function apiDevMiddleware() {
           return res;
         };
 
+        // Vercel fournit req.body (JSON), req.query et req.cookies au handler :
+        // le middleware de dev reproduit ce contrat.
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        const raw = Buffer.concat(chunks).toString("utf8");
+        if (raw && (req.headers["content-type"] || "").includes("application/json")) {
+          try {
+            req.body = JSON.parse(raw);
+          } catch {
+            req.body = raw;
+          }
+        }
+        const requestUrl = new URL(req.url, "http://localhost");
+        req.query = Object.fromEntries(requestUrl.searchParams);
+        req.cookies = Object.fromEntries(
+          (req.headers.cookie || "")
+            .split(";")
+            .map((part) => {
+              const idx = part.indexOf("=");
+              return idx === -1 ? null : [part.slice(0, idx).trim(), decodeURIComponent(part.slice(idx + 1))];
+            })
+            .filter(Boolean)
+        );
+
         try {
           const mod = await server.ssrLoadModule(`/api/${name}.ts`);
           if (typeof mod.default !== "function") {
@@ -45,6 +73,29 @@ function apiDevMiddleware() {
   };
 }
 
+function cleanUrlsMiddleware() {
+  return {
+    name: "clean-urls",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url === "/admin") req.url = "/admin.html";
+        else if (req.url === "/dashboard") req.url = "/dashboard.html";
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [apiDevMiddleware()],
+  plugins: [apiDevMiddleware(), cleanUrlsMiddleware()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        admin: resolve(__dirname, "admin.html"),
+        dashboard: resolve(__dirname, "dashboard.html"),
+      },
+    },
+  },
 });

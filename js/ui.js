@@ -36,6 +36,34 @@ const renderSessionLabel = (inst) => {
 const normalizeText = (str) =>
   (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+/**
+ * Proximité de la plage optimale la plus proche (horizon = semaine en cours).
+ * - 0 si une plage OPTIMAL est en cours ;
+ * - minutes restantes avant le prochain début (pas encore débutée) ;
+ * - Infinity si toutes les occurrences de la semaine sont achevées (exclues du tri).
+ */
+export const optimalProximity = (inst, now = DateTime.now()) => {
+  const optimalWindows = (Array.isArray(inst.windows) ? inst.windows : []).filter((w) => w.kind === 'OPTIMAL');
+  if (!optimalWindows.length) return Infinity;
+
+  let delta = Infinity;
+  for (const w of optimalWindows) {
+    const local = now.setZone(w.timezone);
+    const weekStart = local.startOf('week'); // lundi 00:00 (fuseau de la plage)
+    const weekEnd = weekStart.plus({ days: 7 });
+    for (const d of Array.isArray(w.days) ? w.days : []) {
+      const start = weekStart.plus({ days: d - 1, minutes: w.startMinute });
+      const end = start.plus({ minutes: w.endMinute - w.startMinute });
+      if (now >= start && now < end) return 0; // en cours : tout premier
+      if (start > now && start < weekEnd) {
+        const remaining = start.diff(now, 'minutes').minutes;
+        if (remaining < delta) delta = remaining;
+      }
+    }
+  }
+  return delta;
+};
+
 // Panneau de détails ouvert par l'icône œil : conservé entre les re-rendus
 // (les cartes sont recréées toutes les 60 s).
 const openDetails = new Set();
@@ -111,7 +139,7 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
   `;
 };
 
-export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false) => {
+export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false, sortOptimal = false) => {
   containerEl.innerHTML = '';
 
   const normalizedQuery = normalizeText(searchQuery).trim();
@@ -124,14 +152,28 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
   categoriesToRender.forEach(category => {
     let categoryVisible = 0;
 
+    // Collecte filtrée avant rendu (le tri éventuel réordonne la file entière).
+    const displayQueue = [];
     category.items.forEach(inst => {
       const isOpen = isInstrumentOpen(inst);
       if (selectedStatus === 'open' && !isOpen) return;
       if (selectedStatus === 'closed' && isOpen) return;
       if (optimalOnly && !isOptimalNow(inst, now)) return;
       if (normalizedQuery && !normalizeText(inst.name).includes(normalizedQuery)) return;
+      displayQueue.push(inst);
+    });
 
+    // Tri optionnel : plage optimale la plus proche de maintenant d'abord
+    // (en cours = 0, puis les plages non débutées par proximité ; les plages
+    // déjà achevées cette semaine sont exclues du tri et restent à la fin,
+    // dans leur ordre d'origine — Array.sort est stable).
+    if (sortOptimal) {
+      displayQueue.sort((a, b) => optimalProximity(a, now) - optimalProximity(b, now));
+    }
+
+    displayQueue.forEach(inst => {
       categoryVisible += 1;
+      const isOpen = isInstrumentOpen(inst);
       const hasWindows = Array.isArray(inst.windows) && inst.windows.length > 0;
 
       let scheduleBarHtml = '';

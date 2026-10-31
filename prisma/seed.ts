@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { prisma } from "../lib/prisma";
+import { hashPassword } from "../lib/password";
 import {
   CATEGORIES,
   INSTRUMENTS,
@@ -154,8 +155,23 @@ async function main() {
     });
   }
 
-  // 4. Resynchronisation des séquences (rejouable : MAX=0 sur base vide -> valeur 1, is_called=false).
-  for (const table of ["instruments", "categories", "sessions"] as const) {
+  // 4. Réservé au compte d'administration : upsert (jamais de reset de mot de passe forcé).
+  const ADMIN_EMAIL = "admin@instrumentclock.com";
+  const ADMIN_PASSWORD = "admin123@";
+  await prisma.user.upsert({
+    where: { email: ADMIN_EMAIL },
+    update: {},
+    create: {
+      email: ADMIN_EMAIL,
+      name: "Administrateur",
+      role: "ADMIN",
+      isActive: true,
+      passwordHash: hashPassword(ADMIN_PASSWORD),
+    },
+  });
+
+  // 5. Resynchronisation des séquences (rejouable : MAX=0 sur base vide -> valeur 1, is_called=false).
+  for (const table of ["instruments", "categories", "sessions", "users"] as const) {
     await prisma.$executeRawUnsafe(
       `SELECT setval(pg_get_serial_sequence('${table}', 'id'), COALESCE((SELECT MAX(id) FROM "${table}"), 0) + 1, false)`,
     );
@@ -170,7 +186,7 @@ async function main() {
 
   console.log(
     `Seed done: ${sessionsCount} sessions, ${categoriesCount} categories, ` +
-      `${instrumentsCount} instruments, ${windowsCount} instrument_windows.`,
+      `${instrumentsCount} instruments, ${windowsCount} instrument_windows, admin ${ADMIN_EMAIL}.`,
   );
 }
 

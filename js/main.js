@@ -2,6 +2,8 @@ import { fetchAppData } from './api.js';
 import { renderForexTimeline } from './timeline.js';
 import { renderInstruments, renderTimezoneOptions, renderCategoryFilters, renderWorldClocks } from './ui.js';
 import { timezonesList, getLocalTimezone, isInstrumentOpen } from './timezone.js';
+import { setupMarketBell } from './bell.js';
+import { setupLogin } from './login.js';
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
 
 // --- Data (loaded from /api, falls back to js/data.js) ---
@@ -15,7 +17,8 @@ const AppState = {
   category: 'all', // 'all' or category ID
   status: 'all', // 'all', 'open', 'closed'
   search: '', // free-text instrument search
-  optimalOnly: false // show only instruments currently in their optimal window
+  optimalOnly: false, // show only instruments currently in their optimal window
+  sortOptimal: false // tri par plage optimale la plus proche de maintenant
 };
 
 // --- DOM Elements ---
@@ -28,6 +31,7 @@ const categoryTabs = document.getElementById('category-tabs');
 const statusSelector = document.getElementById('status-selector');
 const instrumentSearch = document.getElementById('instrument-search');
 const optimalToggle = document.getElementById('optimal-toggle');
+const sortOptimalBtn = document.getElementById('sort-optimal');
 const iconSun = document.getElementById('icon-sun');
 const iconMoon = document.getElementById('icon-moon');
 const clockTime = document.getElementById('clock-time');
@@ -35,6 +39,13 @@ const clockDate = document.getElementById('clock-date');
 const worldClocksContainer = document.getElementById('world-clocks-container');
 const holidayNotice = document.getElementById('holiday-notice');
 const scrollTopBtn = document.getElementById('scroll-top');
+
+// Cloche "marchés ouverts" : compte, badge vert/rouge, hovertext et panneau déroulant.
+const updateMarketBell = setupMarketBell(() => AppData);
+
+// Bouton de connexion/déconnexion de la navbar (modale + cookie de session).
+const loginBtn = document.getElementById('login-btn');
+if (loginBtn) setupLogin(loginBtn);
 
 // --- Initialization ---
 const init = async () => {
@@ -79,6 +90,7 @@ const init = async () => {
   timezoneSelector.addEventListener('change', handleTimezoneChange);
   statusSelector.addEventListener('change', handleStatusChange);
   optimalToggle.addEventListener('change', handleOptimalChange);
+  sortOptimalBtn.addEventListener('click', handleSortOptimal);
   themeToggle.addEventListener('click', handleThemeToggle);
   instrumentSearch.addEventListener('input', debounce((e) => {
     AppState.search = e.target.value.trim();
@@ -142,6 +154,13 @@ const handleOptimalChange = (e) => {
   renderAll();
 };
 
+const handleSortOptimal = () => {
+  AppState.sortOptimal = !AppState.sortOptimal;
+  sortOptimalBtn.classList.toggle('active', AppState.sortOptimal);
+  sortOptimalBtn.setAttribute('aria-pressed', String(AppState.sortOptimal));
+  renderAll();
+};
+
 const handleThemeToggle = () => {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const newTheme = isDark ? 'light' : 'dark';
@@ -166,10 +185,13 @@ const renderAll = () => {
   renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly);
+  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal);
   
   // 4. Holiday notice (optionnel)
   renderHolidayNotice();
+
+  // 5. Cloche des marchés ouverts (badge + panneau déroulant)
+  updateMarketBell();
 };
 
 const updateClock = () => {
@@ -185,6 +207,9 @@ const updateClock = () => {
   
   // Update forex market status
   updateForexMarketStatus();
+
+  // Réagit dès qu'une minute change pour garder la cloche à jour (plages horaires)
+  updateMarketBell();
 };
 
 const updateForexMarketStatus = () => {

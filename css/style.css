@@ -79,6 +79,135 @@ body {
 }
 
 /* Header */
+.navbar {
+  background: var(--bg-color-header);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 1rem;
+  flex-wrap: wrap;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-main);
+}
+
+.navbar-logo-mark {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.navbar-logo-text {
+  background: linear-gradient(135deg, var(--color-primary), #db2777);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-link {
+  display: inline-block;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.navbar-link:hover {
+  color: var(--text-main);
+  background: var(--bg-color-main);
+}
+
+.navbar-link.is-active {
+  color: var(--color-primary);
+  background: rgba(0, 113, 227, 0.1);
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Barre d'outils indépendante : horloge + saison + fuseau horaire.
+   Même largeur (max-w) et même alignement que les sections du main. */
+.tools-bar {
+  background: var(--bg-color-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin: 1.5rem auto 1rem;
+  position: relative;
+  z-index: 99;
+}
+
+.tools-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 1rem;
+  flex-wrap: wrap;
+}
+
+.tools-bar .system-clock {
+  padding: 0.35rem 0.7rem;
+  min-width: 120px;
+  margin-right: auto;
+}
+
+.tools-bar .clock-time {
+  font-size: 1.15rem;
+}
+
+.tools-bar .clock-date {
+  font-size: 0.68rem;
+}
+
+.tools-bar .control-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.tools-bar .control-group select {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.82rem;
+  border-radius: 8px;
+}
+
+/* Header legacy (pages admin/dashboard) */
 .app-header {
   background: var(--bg-color-header);
   box-shadow: var(--shadow-sm);
@@ -195,33 +324,42 @@ select:focus {
 
 /* Mobile header */
 @media (max-width: 767px) {
-  .header-content {
+  .navbar-inner {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
   }
 
-  .logo-area {
-    text-align: center;
+  .navbar-logo-text {
+    display: none;
   }
 
-  .system-clock {
-    min-width: 0;
+  .navbar-menu {
+    justify-content: center;
+    gap: 0.1rem;
   }
 
-  .controls-area {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    align-items: end;
+  .navbar-link {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.82rem;
+  }
+
+  .navbar-right {
+    justify-content: center;
     gap: 0.5rem;
   }
 
-  .control-group {
+  .tools-inner {
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .tools-bar .system-clock {
     min-width: 0;
   }
 
-  .control-group select {
-    width: 100%;
+  .tools-bar .control-group span {
+    display: none;
   }
 }
 
@@ -1155,4 +1293,222 @@ footer {
   background: var(--bg-color-card);
   margin: 1rem 0;
   font-size: 0.95rem;
+}
+
+/* ============================ Market bell ============================ */
+.bell-filter {
+  position: relative;
+}
+
+.bell-button {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-color-card);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.bell-button:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.bell-button[aria-expanded="true"] {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--bg-color-main);
+}
+
+.bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-optimal);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 2px var(--bg-color-main);
+  transition: var(--transition);
+}
+
+.bell-badge.is-zero {
+  background: var(--color-closed);
+}
+
+.bell-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  /* wrap-content : la largeur s'adapte à la ligne la plus longue */
+  width: max-content;
+  min-width: 220px;
+  max-width: min(400px, calc(100vw - 24px));
+  max-height: 340px;
+  overflow-y: auto;
+  background: var(--bg-color-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  animation: bell-pop 0.16s ease;
+}
+
+@keyframes bell-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bell-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.bell-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bell-row + .bell-row {
+  border-top: 1px solid var(--border-color);
+  border-radius: 0;
+  margin-top: 2px;
+}
+
+.bell-row:hover {
+  background: var(--bg-color-main);
+}
+
+.bell-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 1.35;
+}
+
+.bell-row-name {
+  min-width: 0;
+  /* exemple : Cryptomonnaies - Global 24/7 */
+}
+
+.bell-row-hours {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  /* exemple : 00:00 - 24:00 · Lun-Dim */
+}
+
+.bell-hours-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.bell-row-count {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-color-main);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.bell-optimal {
+  color: var(--color-optimal);
+  font-size: 0.8rem;
+  margin-right: 4px;
+}
+
+@media (max-width: 640px) {
+  .bell-panel {
+    position: fixed;
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 45vh;
+  }
+}
+
+/* Bouton de tri par plage optimale (dans la barre de filtres) */
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color-card);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.sort-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.sort-btn.active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: rgba(0, 113, 227, 0.1);
+}
+
+.sort-btn svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .sort-btn-label {
+    display: none;
+  }
 }

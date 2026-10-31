@@ -1,10 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
+  "cleanUrls": true,
   "buildCommand": "prisma generate && prisma migrate deploy && vite build",
   "outputDirectory": "dist",
   "functions": {
-    "api/*.ts": {
+    "api/**/*.ts": {
       "memory": 512,
       "maxDuration": 10
     }
