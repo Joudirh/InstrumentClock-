@@ -31,10 +31,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = req.method;
 
   // ---------- PROFILE ----------
-  if (path === "" && method === "GET") {
+  if ((path === "" || path === "profile") && method === "GET") {
     return json(res, 200, { user: publicUser(user) });
   }
-  if (path === "" && method === "PUT") {
+  if ((path === "" || path === "profile") && method === "PUT") {
     const body = bodyOf(req);
     const data: { name?: string; passwordHash?: string } = {};
     if (typeof body.name === "string" && body.name.trim()) data.name = body.name.trim();
