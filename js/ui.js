@@ -70,6 +70,14 @@ export const optimalProximity = (inst, now = DateTime.now()) => {
 // (les cartes sont recréées toutes les 60 s).
 const openDetails = new Set();
 const detailsKey = (inst) => inst.id ?? inst.name;
+const detailIcons = {
+  description: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16M8 7h8M8 11h8"/></svg>',
+  session: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+  timezone: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  days: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
+  time: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  localTime: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>'
+};
 
 const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
   const sessionLine = inst.session
@@ -81,12 +89,22 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
     const isFullDay = w.startMinute === 0 && w.endMinute === 1440;
     const native = isFullDay ? '24h/24' : `${formatMinutes(w.startMinute)} - ${formatMinutes(w.endMinute)}`;
     const local = isFullDay ? '24h/24' : `${formatTime(startDec)} - ${formatTime(endDec)}`;
-    const dot = w.kind === 'TRADING' ? 'open' : 'optimal';
     return `
       <li class="inst-details-row">
-        <span class="inst-details-days">${describeDays(w.days)}</span>
-        <span class="inst-details-time">${native} <em>(fuseau ${w.timezone})</em></span>
-        <span class="inst-details-time">${local} <em>(fuseau d'affichage ${targetTz})</em></span>
+        <span class="inst-details-cell inst-details-days">
+          <span class="inst-details-cell-label">${detailIcons.days} Jours</span>
+          <strong>${describeDays(w.days)}</strong>
+        </span>
+        <span class="inst-details-cell">
+          <span class="inst-details-cell-label">${detailIcons.time} Heure de la session</span>
+          <strong>${native}</strong>
+          <em>${w.timezone}</em>
+        </span>
+        <span class="inst-details-cell">
+          <span class="inst-details-cell-label">${detailIcons.localTime} Heure d'affichage</span>
+          <strong>${local}</strong>
+          <em>${targetTz}</em>
+        </span>
       </li>`;
   };
 
@@ -101,10 +119,10 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
     : '';
 
   const legacyScheduleItem = Array.isArray(inst.scheduleSegments) && inst.scheduleSegments.length
-    ? `<li class="inst-details-row"><span class="inst-details-time">${inst.scheduleSegments.map(([s, e]) => `${formatMinutes(s * 60)} - ${formatMinutes(e * 60)}`).join(' | ')}</span></li>`
+    ? `<li class="inst-details-row"><span class="inst-details-cell inst-details-cell-wide"><span class="inst-details-cell-label">${detailIcons.time} Horaires de la session</span><strong>${inst.scheduleSegments.map(([s, e]) => `${formatMinutes(s * 60)} - ${formatMinutes(e * 60)}`).join(' | ')}</strong><em>${inst.openTz || 'UTC'}</em></span></li>`
     : '';
   const legacyOptimalItem = inst.optimalStartHour !== undefined
-    ? `<li class="inst-details-row"><span class="inst-details-time">${formatMinutes(inst.optimalStartHour * 60)} - ${formatMinutes(inst.optimalEndHour * 60)} <em>(fuseau ${inst.optimalTz || inst.openTz})</em></span></li>`
+    ? `<li class="inst-details-row"><span class="inst-details-cell inst-details-cell-wide"><span class="inst-details-cell-label">${detailIcons.time} Horaires optimaux</span><strong>${formatMinutes(inst.optimalStartHour * 60)} - ${formatMinutes(inst.optimalEndHour * 60)}</strong><em>${inst.optimalTz || inst.openTz}</em></span></li>`
     : '';
   if (!hasWindows) {
     tradingRows = legacyScheduleItem;
@@ -114,7 +132,7 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
   const groupHtml = (title, dot, rows) => {
     if (!rows || !rows.trim()) return '';
     return `
-      <div class="inst-details-group">
+      <div class="inst-details-group ${dot}">
         <div class="inst-details-sub"><i class="inst-legend-dot ${dot}"></i> ${title}</div>
         <ul class="inst-details-list">${rows}</ul>
       </div>`;
@@ -122,14 +140,14 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
 
   return `
     <div class="inst-details-inner">
-      ${inst.description ? `<div class="inst-details-desc">${inst.description}</div>` : ''}
+      ${inst.description ? `<div class="inst-details-desc"><span class="inst-details-icon">${detailIcons.description}</span><p>${inst.description}</p></div>` : ''}
       <div class="inst-details-meta">
         <div class="inst-details-meta-item">
-          <span class="inst-details-meta-label">Session de rattachement</span>
+          <span class="inst-details-meta-label">${detailIcons.session} Session de rattachement</span>
           <span class="inst-details-meta-value">${sessionLine}</span>
         </div>
         <div class="inst-details-meta-item">
-          <span class="inst-details-meta-label">Fuseau d'affichage</span>
+          <span class="inst-details-meta-label">${detailIcons.timezone} Fuseau d'affichage</span>
           <span class="inst-details-meta-value">${targetTz}</span>
         </div>
       </div>
@@ -146,6 +164,9 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
 
   const normalizedQuery = normalizeText(searchQuery).trim();
   const now = DateTime.now();
+  const displayNow = now.setZone(targetTz);
+  const currentTimeDecimal = displayNow.hour + displayNow.minute / 60 + displayNow.second / 3600;
+  const currentTimeMarker = `<div class="inst-current-time-line" style="left:${(currentTimeDecimal / 24) * 100}%" title="Heure actuelle : ${displayNow.toFormat('HH:mm')} (${targetTz})" aria-label="Heure actuelle : ${displayNow.toFormat('HH:mm')} (${targetTz})"></div>`;
   
   const categoriesToRender = selectedCategory === 'all' 
     ? instrumentCategories 
@@ -270,6 +291,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
             ${renderInstAxis()}
             ${scheduleBarHtml}
             ${optimalBarHtml}
+            ${currentTimeMarker}
           </div>
           ${windowsLegend}
         </div>
