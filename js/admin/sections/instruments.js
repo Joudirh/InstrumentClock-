@@ -221,20 +221,35 @@ export async function render(content) {
 
   function downloadImportTemplate() {
     const headers = ['name', 'description', 'category', 'session', 'trading_windows', 'optimal_windows'];
-    const session = sessions[0];
-    const category = categories[0];
     const quoteCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const sample = category && session
-      ? [
-          'EXEMPLE - À MODIFIER OU SUPPRIMER',
-          'Remplacez cette ligne par votre instrument ou supprimez-la.',
-          category.name,
-          session.name,
-          `1-5 08:00-17:00@${session.timezone}`,
-          `1-5 08:00-12:00@${session.timezone}`,
-        ]
-      : null;
-    const csv = [headers, ...(sample ? [sample] : [])]
+    const preferredSessions = {
+      forex: 'london',
+      indices: 'tokyo',
+      'matieres-premieres': 'london',
+      actions: 'new-york',
+      crypto: 'global-24-7',
+      etf: 'new-york',
+      futures: 'chicago',
+    };
+    const findSession = (category) => {
+      const preferredSlug = preferredSessions[category.slug];
+      return sessions.find((session) => session.slug === preferredSlug)
+        || sessions.find((session) => session.is247)
+        || sessions[0];
+    };
+    const sampleRows = categories.flatMap((category) => {
+      const session = findSession(category);
+      if (!session) return [];
+      return [[
+        `EXEMPLE ${category.name} - À MODIFIER OU SUPPRIMER`,
+        `Exemple pour la catégorie ${category.name}. Remplacez cette ligne ou supprimez-la.`,
+        category.name,
+        session.name,
+        `1-5 08:00-17:00@${session.timezone}`,
+        `1-5 08:00-12:00@${session.timezone}`,
+      ]];
+    });
+    const csv = [headers, ...sampleRows]
       .map((row) => row.map(quoteCsv).join(';'))
       .join('\r\n') + '\r\n';
     const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
@@ -256,7 +271,7 @@ export async function render(content) {
         <div class="import-guide">
           <strong>Colonnes du modèle</strong>
           <p><code>name</code>, <code>description</code>, <code>category</code>, <code>session</code>, <code>trading_windows</code>, <code>optimal_windows</code>.</p>
-          <p>Le modèle contient une ligne d’exemple : remplacez-la par votre instrument ou supprimez-la avant l’import.</p>
+          <p>Le modèle contient une ligne d’exemple pour chaque catégorie de votre application. Remplacez les lignes utiles par vos instruments et supprimez les autres avant l’import.</p>
           <p>Les catégories et séances doivent reprendre leur nom affiché dans l’administration. Une plage suit le format <code>1-5 08:00-17:00@Europe/Paris</code> (1 = lundi, 7 = dimanche).</p>
           <p>Pour plusieurs plages du même type, séparez-les avec <code>|</code>. Vous pouvez ajouter un libellé avec <code>Session Londres~1-5 08:00-17:00@Europe/London</code>.</p>
           <p>Pour une fin après minuit, utilisez une heure supérieure à 24, par exemple <code>1-5 22:00-26:00@Europe/Paris</code>.</p>
