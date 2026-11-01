@@ -7,7 +7,7 @@ export default {
   },
   nav: {
     home: 'الرئيسية',
-    training: 'التدريب',
+    training: 'التكوين',
     contact: 'اتصل بنا',
     about: 'من نحن',
     login: 'تسجيل الدخول'

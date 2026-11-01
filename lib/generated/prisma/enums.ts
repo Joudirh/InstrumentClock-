@@ -35,3 +35,11 @@ export const WindowKind = {
 } as const
 
 export type WindowKind = (typeof WindowKind)[keyof typeof WindowKind]
+
+
+export const AcademyCourseStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED'
+} as const
+
+export type AcademyCourseStatus = (typeof AcademyCourseStatus)[keyof typeof AcademyCourseStatus]

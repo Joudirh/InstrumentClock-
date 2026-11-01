@@ -243,6 +243,7 @@ export type UserWhereInput = {
   authTokens?: Prisma.UserAuthTokenListRelationFilter
   favorites?: Prisma.InstrumentFavoriteListRelationFilter
   alerts?: Prisma.MarketAlertListRelationFilter
+  verifiedAcademyCourses?: Prisma.AcademyCourseListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -257,6 +258,7 @@ export type UserOrderByWithRelationInput = {
   authTokens?: Prisma.UserAuthTokenOrderByRelationAggregateInput
   favorites?: Prisma.InstrumentFavoriteOrderByRelationAggregateInput
   alerts?: Prisma.MarketAlertOrderByRelationAggregateInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -274,6 +276,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   authTokens?: Prisma.UserAuthTokenListRelationFilter
   favorites?: Prisma.InstrumentFavoriteListRelationFilter
   alerts?: Prisma.MarketAlertListRelationFilter
+  verifiedAcademyCourses?: Prisma.AcademyCourseListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -317,6 +320,7 @@ export type UserCreateInput = {
   authTokens?: Prisma.UserAuthTokenCreateNestedManyWithoutUserInput
   favorites?: Prisma.InstrumentFavoriteCreateNestedManyWithoutUserInput
   alerts?: Prisma.MarketAlertCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -331,6 +335,7 @@ export type UserUncheckedCreateInput = {
   authTokens?: Prisma.UserAuthTokenUncheckedCreateNestedManyWithoutUserInput
   favorites?: Prisma.InstrumentFavoriteUncheckedCreateNestedManyWithoutUserInput
   alerts?: Prisma.MarketAlertUncheckedCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserUpdateInput = {
@@ -344,6 +349,7 @@ export type UserUpdateInput = {
   authTokens?: Prisma.UserAuthTokenUpdateManyWithoutUserNestedInput
   favorites?: Prisma.InstrumentFavoriteUpdateManyWithoutUserNestedInput
   alerts?: Prisma.MarketAlertUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUpdateManyWithoutVerifiedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -358,6 +364,7 @@ export type UserUncheckedUpdateInput = {
   authTokens?: Prisma.UserAuthTokenUncheckedUpdateManyWithoutUserNestedInput
   favorites?: Prisma.InstrumentFavoriteUncheckedUpdateManyWithoutUserNestedInput
   alerts?: Prisma.MarketAlertUncheckedUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedUpdateManyWithoutVerifiedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -438,6 +445,11 @@ export type UserScalarRelationFilter = {
   isNot?: Prisma.UserWhereInput
 }
 
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
+}
+
 export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
 }
@@ -488,6 +500,22 @@ export type UserUpdateOneRequiredWithoutAlertsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAlertsInput, Prisma.UserUpdateWithoutAlertsInput>, Prisma.UserUncheckedUpdateWithoutAlertsInput>
 }
 
+export type UserCreateNestedOneWithoutVerifiedAcademyCoursesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVerifiedAcademyCoursesInput, Prisma.UserUncheckedCreateWithoutVerifiedAcademyCoursesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVerifiedAcademyCoursesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutVerifiedAcademyCoursesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVerifiedAcademyCoursesInput, Prisma.UserUncheckedCreateWithoutVerifiedAcademyCoursesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVerifiedAcademyCoursesInput
+  upsert?: Prisma.UserUpsertWithoutVerifiedAcademyCoursesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVerifiedAcademyCoursesInput, Prisma.UserUpdateWithoutVerifiedAcademyCoursesInput>, Prisma.UserUncheckedUpdateWithoutVerifiedAcademyCoursesInput>
+}
+
 export type UserCreateWithoutAuthTokensInput = {
   email: string
   name: string
@@ -498,6 +526,7 @@ export type UserCreateWithoutAuthTokensInput = {
   updatedAt?: Date | string
   favorites?: Prisma.InstrumentFavoriteCreateNestedManyWithoutUserInput
   alerts?: Prisma.MarketAlertCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserUncheckedCreateWithoutAuthTokensInput = {
@@ -511,6 +540,7 @@ export type UserUncheckedCreateWithoutAuthTokensInput = {
   updatedAt?: Date | string
   favorites?: Prisma.InstrumentFavoriteUncheckedCreateNestedManyWithoutUserInput
   alerts?: Prisma.MarketAlertUncheckedCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserCreateOrConnectWithoutAuthTokensInput = {
@@ -539,6 +569,7 @@ export type UserUpdateWithoutAuthTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   favorites?: Prisma.InstrumentFavoriteUpdateManyWithoutUserNestedInput
   alerts?: Prisma.MarketAlertUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUpdateManyWithoutVerifiedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthTokensInput = {
@@ -552,6 +583,7 @@ export type UserUncheckedUpdateWithoutAuthTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   favorites?: Prisma.InstrumentFavoriteUncheckedUpdateManyWithoutUserNestedInput
   alerts?: Prisma.MarketAlertUncheckedUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedUpdateManyWithoutVerifiedByNestedInput
 }
 
 export type UserCreateWithoutFavoritesInput = {
@@ -564,6 +596,7 @@ export type UserCreateWithoutFavoritesInput = {
   updatedAt?: Date | string
   authTokens?: Prisma.UserAuthTokenCreateNestedManyWithoutUserInput
   alerts?: Prisma.MarketAlertCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserUncheckedCreateWithoutFavoritesInput = {
@@ -577,6 +610,7 @@ export type UserUncheckedCreateWithoutFavoritesInput = {
   updatedAt?: Date | string
   authTokens?: Prisma.UserAuthTokenUncheckedCreateNestedManyWithoutUserInput
   alerts?: Prisma.MarketAlertUncheckedCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserCreateOrConnectWithoutFavoritesInput = {
@@ -605,6 +639,7 @@ export type UserUpdateWithoutFavoritesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authTokens?: Prisma.UserAuthTokenUpdateManyWithoutUserNestedInput
   alerts?: Prisma.MarketAlertUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUpdateManyWithoutVerifiedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFavoritesInput = {
@@ -618,6 +653,7 @@ export type UserUncheckedUpdateWithoutFavoritesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authTokens?: Prisma.UserAuthTokenUncheckedUpdateManyWithoutUserNestedInput
   alerts?: Prisma.MarketAlertUncheckedUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedUpdateManyWithoutVerifiedByNestedInput
 }
 
 export type UserCreateWithoutAlertsInput = {
@@ -630,6 +666,7 @@ export type UserCreateWithoutAlertsInput = {
   updatedAt?: Date | string
   authTokens?: Prisma.UserAuthTokenCreateNestedManyWithoutUserInput
   favorites?: Prisma.InstrumentFavoriteCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserUncheckedCreateWithoutAlertsInput = {
@@ -643,6 +680,7 @@ export type UserUncheckedCreateWithoutAlertsInput = {
   updatedAt?: Date | string
   authTokens?: Prisma.UserAuthTokenUncheckedCreateNestedManyWithoutUserInput
   favorites?: Prisma.InstrumentFavoriteUncheckedCreateNestedManyWithoutUserInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedCreateNestedManyWithoutVerifiedByInput
 }
 
 export type UserCreateOrConnectWithoutAlertsInput = {
@@ -671,6 +709,7 @@ export type UserUpdateWithoutAlertsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authTokens?: Prisma.UserAuthTokenUpdateManyWithoutUserNestedInput
   favorites?: Prisma.InstrumentFavoriteUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUpdateManyWithoutVerifiedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAlertsInput = {
@@ -684,6 +723,77 @@ export type UserUncheckedUpdateWithoutAlertsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   authTokens?: Prisma.UserAuthTokenUncheckedUpdateManyWithoutUserNestedInput
   favorites?: Prisma.InstrumentFavoriteUncheckedUpdateManyWithoutUserNestedInput
+  verifiedAcademyCourses?: Prisma.AcademyCourseUncheckedUpdateManyWithoutVerifiedByNestedInput
+}
+
+export type UserCreateWithoutVerifiedAcademyCoursesInput = {
+  email: string
+  name: string
+  role?: $Enums.Role
+  passwordHash: string
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  authTokens?: Prisma.UserAuthTokenCreateNestedManyWithoutUserInput
+  favorites?: Prisma.InstrumentFavoriteCreateNestedManyWithoutUserInput
+  alerts?: Prisma.MarketAlertCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutVerifiedAcademyCoursesInput = {
+  id?: number
+  email: string
+  name: string
+  role?: $Enums.Role
+  passwordHash: string
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  authTokens?: Prisma.UserAuthTokenUncheckedCreateNestedManyWithoutUserInput
+  favorites?: Prisma.InstrumentFavoriteUncheckedCreateNestedManyWithoutUserInput
+  alerts?: Prisma.MarketAlertUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutVerifiedAcademyCoursesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutVerifiedAcademyCoursesInput, Prisma.UserUncheckedCreateWithoutVerifiedAcademyCoursesInput>
+}
+
+export type UserUpsertWithoutVerifiedAcademyCoursesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutVerifiedAcademyCoursesInput, Prisma.UserUncheckedUpdateWithoutVerifiedAcademyCoursesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutVerifiedAcademyCoursesInput, Prisma.UserUncheckedCreateWithoutVerifiedAcademyCoursesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutVerifiedAcademyCoursesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutVerifiedAcademyCoursesInput, Prisma.UserUncheckedUpdateWithoutVerifiedAcademyCoursesInput>
+}
+
+export type UserUpdateWithoutVerifiedAcademyCoursesInput = {
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  authTokens?: Prisma.UserAuthTokenUpdateManyWithoutUserNestedInput
+  favorites?: Prisma.InstrumentFavoriteUpdateManyWithoutUserNestedInput
+  alerts?: Prisma.MarketAlertUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutVerifiedAcademyCoursesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  authTokens?: Prisma.UserAuthTokenUncheckedUpdateManyWithoutUserNestedInput
+  favorites?: Prisma.InstrumentFavoriteUncheckedUpdateManyWithoutUserNestedInput
+  alerts?: Prisma.MarketAlertUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -695,12 +805,14 @@ export type UserCountOutputType = {
   authTokens: number
   favorites: number
   alerts: number
+  verifiedAcademyCourses: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   authTokens?: boolean | UserCountOutputTypeCountAuthTokensArgs
   favorites?: boolean | UserCountOutputTypeCountFavoritesArgs
   alerts?: boolean | UserCountOutputTypeCountAlertsArgs
+  verifiedAcademyCourses?: boolean | UserCountOutputTypeCountVerifiedAcademyCoursesArgs
 }
 
 /**
@@ -734,6 +846,13 @@ export type UserCountOutputTypeCountAlertsArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.MarketAlertWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountVerifiedAcademyCoursesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AcademyCourseWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -747,6 +866,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   authTokens?: boolean | Prisma.User$authTokensArgs<ExtArgs>
   favorites?: boolean | Prisma.User$favoritesArgs<ExtArgs>
   alerts?: boolean | Prisma.User$alertsArgs<ExtArgs>
+  verifiedAcademyCourses?: boolean | Prisma.User$verifiedAcademyCoursesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -788,6 +908,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   authTokens?: boolean | Prisma.User$authTokensArgs<ExtArgs>
   favorites?: boolean | Prisma.User$favoritesArgs<ExtArgs>
   alerts?: boolean | Prisma.User$alertsArgs<ExtArgs>
+  verifiedAcademyCourses?: boolean | Prisma.User$verifiedAcademyCoursesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -799,6 +920,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     authTokens: Prisma.$UserAuthTokenPayload<ExtArgs>[]
     favorites: Prisma.$InstrumentFavoritePayload<ExtArgs>[]
     alerts: Prisma.$MarketAlertPayload<ExtArgs>[]
+    verifiedAcademyCourses: Prisma.$AcademyCoursePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1206,6 +1328,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   authTokens<T extends Prisma.User$authTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserAuthTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   favorites<T extends Prisma.User$favoritesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$favoritesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InstrumentFavoritePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   alerts<T extends Prisma.User$alertsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$alertsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MarketAlertPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  verifiedAcademyCourses<T extends Prisma.User$verifiedAcademyCoursesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$verifiedAcademyCoursesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AcademyCoursePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1705,6 +1828,30 @@ export type User$alertsArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.MarketAlertScalarFieldEnum | Prisma.MarketAlertScalarFieldEnum[]
+}
+
+/**
+ * User.verifiedAcademyCourses
+ */
+export type User$verifiedAcademyCoursesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AcademyCourse
+   */
+  select?: Prisma.AcademyCourseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AcademyCourse
+   */
+  omit?: Prisma.AcademyCourseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AcademyCourseInclude<ExtArgs> | null
+  where?: Prisma.AcademyCourseWhereInput
+  orderBy?: Prisma.AcademyCourseOrderByWithRelationInput | Prisma.AcademyCourseOrderByWithRelationInput[]
+  cursor?: Prisma.AcademyCourseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AcademyCourseScalarFieldEnum | Prisma.AcademyCourseScalarFieldEnum[]
 }
 
 /**

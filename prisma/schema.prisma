@@ -35,6 +35,7 @@ model User {
   authTokens   UserAuthToken[]
   favorites    InstrumentFavorite[]
   alerts       MarketAlert[]
+  verifiedAcademyCourses AcademyCourse[] @relation("AcademyCourseVerifier")
 
   @@map("users")
 }
@@ -185,4 +186,33 @@ model MarketAlert {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("market_alerts")
+}
+
+enum AcademyCourseStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model AcademyCourse {
+  id            Int                 @id @default(autoincrement())
+  code          String              @unique
+  slug          String              @unique
+  title         String
+  domain        String
+  path          String
+  level         String
+  summary       String
+  objectives    Json
+  content       Json
+  sourceMarkdown String             @map("source_markdown") @db.Text
+  status        AcademyCourseStatus @default(DRAFT)
+  version       Int                 @default(1)
+  verifiedById  Int?                @map("verified_by_id")
+  verifiedBy    User?               @relation("AcademyCourseVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  publishedAt   DateTime?           @map("published_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  @@index([status, domain, path])
+  @@map("academy_courses")
 }

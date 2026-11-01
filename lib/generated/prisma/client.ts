@@ -96,3 +96,8 @@ export type InstrumentFavorite = Prisma.InstrumentFavoriteModel
  * 
  */
 export type MarketAlert = Prisma.MarketAlertModel
+/**
+ * Model AcademyCourse
+ * 
+ */
+export type AcademyCourse = Prisma.AcademyCourseModel

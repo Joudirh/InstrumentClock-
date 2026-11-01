@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/css/flag-icons.min.css">
 <link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/academy.css">
 </head>
 <body>
   <nav class="navbar" aria-label="Navigation principale">
@@ -24,7 +25,7 @@
 
       <ul class="navbar-menu" id="navbar-menu" role="menubar">
         <li role="none"><a class="navbar-link is-active" href="#" data-route="home" data-i18n="nav.home" role="menuitem">Accueil</a></li>
-        <li role="none"><a class="navbar-link" href="#apprendre" data-route="apprendre" data-i18n="nav.training" role="menuitem">Apprendre</a></li>
+        <li id="academy-nav-item" role="none"><a class="navbar-link" href="#apprendre" data-route="apprendre" data-i18n="nav.training" role="menuitem">Formation</a></li>
         <li role="none"><a class="navbar-link" href="#contact" data-route="contact" data-i18n="nav.contact" role="menuitem">Contact</a></li>
         <li role="none"><a class="navbar-link" href="#apropos" data-route="apropos" data-i18n="nav.about" role="menuitem">À propos</a></li>
         <li class="navbar-mobile-login" role="none">
@@ -55,6 +56,7 @@
   </nav>
 
    <main class="max-w">
+    <div id="home-view">
     <section class="tools-bar" aria-label="Horloge et paramètres">
       <div class="tools-inner">
         <div id="system-clock" class="system-clock">
@@ -159,6 +161,8 @@
       </div>
       <nav id="instruments-pagination" class="pagination" aria-label="Pagination des instruments" hidden></nav>
     </section>
+    </div>
+    <section id="academy-view" class="academy-shell hidden" aria-label="Trading Academy"></section>
   </main>
   
   <footer>

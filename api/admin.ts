@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword } from "../lib/password.js";
 import { requireRole } from "../lib/session.js";
+import { parseAcademyMarkdown } from "../lib/academy-import.js";
 import {
   deriveLegacyColumns,
   slugify,
@@ -41,6 +42,166 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const path = pathOf(req);
   const method = req.method;
+
+  // ================= TRADING ACADEMY =================
+  if (path === "academy") {
+    if (method === "GET") {
+      const requestedId = req.query.id === undefined ? null : Number(req.query.id);
+      if (requestedId !== null) {
+        if (!Number.isInteger(requestedId) || requestedId < 1) return badRequest(res, ["Identifiant du cours invalide"]);
+        const course = await prisma.academyCourse.findUnique({
+          where: { id: requestedId },
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            title: true,
+            status: true,
+            version: true,
+            sourceMarkdown: true,
+          },
+        });
+        if (!course) return json(res, 404, { error: "Cours introuvable" });
+        return json(res, 200, { course });
+      }
+      const courses = await prisma.academyCourse.findMany({
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          code: true,
+          slug: true,
+          title: true,
+          domain: true,
+          path: true,
+          level: true,
+          status: true,
+          version: true,
+          updatedAt: true,
+          publishedAt: true,
+          verifiedBy: { select: { name: true } },
+        },
+      });
+      res.setHeader("Cache-Control", "no-store");
+      return json(res, 200, { courses });
+    }
+
+    if (method === "POST") {
+      const body = bodyOf(req);
+      if (body.action === "validate" || body.action === "draft") {
+        const parsed = parseAcademyMarkdown(body.markdown);
+        if (!parsed.ok) return json(res, 400, { error: parsed.errors.join(" · "), errors: parsed.errors });
+        const { course } = parsed;
+        const [byCode, bySlug] = await Promise.all([
+          prisma.academyCourse.findUnique({ where: { code: course.code } }),
+          prisma.academyCourse.findUnique({ where: { slug: course.slug } }),
+        ]);
+        if (byCode && bySlug && byCode.id !== bySlug.id) {
+          return json(res, 409, { error: "Le code et le slug correspondent à deux cours différents." });
+        }
+        const existing = byCode || bySlug;
+        if (existing?.status === "PUBLISHED") {
+          return json(res, 409, { error: "Ce cours est déjà publié. L’import ne peut pas écraser un contenu publié." });
+        }
+        if (existing && (existing.code !== course.code || existing.slug !== course.slug)) {
+          return json(res, 409, { error: "Le code et le slug doivent rester identiques lors de la mise à jour d’un brouillon." });
+        }
+        if (body.action === "validate") {
+          return json(res, 200, {
+            valid: true,
+            existingStatus: existing?.status ?? null,
+            course: {
+              code: course.code,
+              slug: course.slug,
+              title: course.title,
+              domain: course.domain,
+              path: course.path,
+              level: course.level,
+              summary: course.summary,
+              objectives: course.objectives,
+              moduleCount: course.modules.length,
+              lessonCount: course.modules.reduce((total, module) => total + module.lessons.length, 0),
+              quizQuestionCount: course.modules.reduce((total, module) => total + module.quiz.length, 0),
+              examQuestionCount: course.exam.length,
+              estimatedMinutes: course.estimatedMinutes,
+            },
+          });
+        }
+
+        const content = {
+          modules: course.modules,
+          exam: course.exam,
+          estimatedMinutes: course.estimatedMinutes,
+        };
+        const saved = existing
+          ? await prisma.academyCourse.update({
+              where: { id: existing.id },
+              data: {
+                title: course.title,
+                domain: course.domain,
+                path: course.path,
+                level: course.level,
+                summary: course.summary,
+                objectives: course.objectives,
+                content,
+                sourceMarkdown: String(body.markdown),
+                status: "DRAFT",
+                verifiedById: null,
+                publishedAt: null,
+                version: { increment: 1 },
+              },
+            })
+          : await prisma.academyCourse.create({
+              data: {
+                code: course.code,
+                slug: course.slug,
+                title: course.title,
+                domain: course.domain,
+                path: course.path,
+                level: course.level,
+                summary: course.summary,
+                objectives: course.objectives,
+                content,
+                sourceMarkdown: String(body.markdown),
+              },
+            });
+        return json(res, 201, { course: { id: saved.id, code: saved.code, slug: saved.slug, title: saved.title, status: saved.status, version: saved.version } });
+      }
+
+      if (body.action === "publish") {
+        if (body.verified !== true) return badRequest(res, ["La confirmation de relecture et de vérification est obligatoire."]);
+        const id = Number(body.id);
+        if (!Number.isInteger(id) || id < 1) return badRequest(res, ["Identifiant du brouillon invalide"]);
+        const draft = await prisma.academyCourse.findUnique({ where: { id } });
+        if (!draft) return json(res, 404, { error: "Cours introuvable" });
+        if (draft.status !== "DRAFT") return json(res, 409, { error: "Seul un brouillon peut être publié." });
+        const parsed = parseAcademyMarkdown(draft.sourceMarkdown);
+        if (!parsed.ok) return json(res, 400, { error: parsed.errors.join(" · "), errors: parsed.errors });
+        if (parsed.course.code !== draft.code || parsed.course.slug !== draft.slug) {
+          return json(res, 409, { error: "Le code ou le slug du brouillon ne correspond plus à son enregistrement." });
+        }
+        const published = await prisma.academyCourse.updateMany({
+          where: { id, status: "DRAFT", updatedAt: draft.updatedAt },
+          data: { status: "PUBLISHED", verifiedById: admin.id, publishedAt: new Date() },
+        });
+        if (published.count !== 1) return json(res, 409, { error: "Le brouillon a été modifié. Rechargez la liste avant de publier." });
+        return json(res, 200, { ok: true, id, status: "PUBLISHED", verifiedBy: admin.name });
+      }
+
+      if (body.action === "delete-draft") {
+        const id = Number(body.id);
+        if (!Number.isInteger(id) || id < 1) return badRequest(res, ["Identifiant du brouillon invalide"]);
+        const deleted = await prisma.academyCourse.deleteMany({ where: { id, status: "DRAFT" } });
+        if (deleted.count !== 1) return json(res, 404, { error: "Brouillon introuvable ou déjà publié." });
+        return json(res, 200, { ok: true });
+      }
+
+      return badRequest(res, ["Action invalide"]);
+    }
+
+    res.statusCode = 405;
+    res.setHeader("Allow", "GET, POST");
+    return res.end("Method not allowed");
+  }
 
   // ================= USERS =================
   if (path === "users") {

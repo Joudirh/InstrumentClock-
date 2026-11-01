@@ -7,7 +7,7 @@ export default {
   },
   nav: {
     home: 'Accueil',
-    training: 'Apprendre',
+    training: 'Formation',
     contact: 'Contact',
     about: 'À propos',
     login: 'Connexion'

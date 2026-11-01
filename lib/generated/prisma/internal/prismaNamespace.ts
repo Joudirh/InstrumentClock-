@@ -407,7 +407,8 @@ export const ModelName = {
   ForexSession: 'ForexSession',
   Asset: 'Asset',
   InstrumentFavorite: 'InstrumentFavorite',
-  MarketAlert: 'MarketAlert'
+  MarketAlert: 'MarketAlert',
+  AcademyCourse: 'AcademyCourse'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "season" | "user" | "userAuthToken" | "category" | "session" | "instrumentWindow" | "instrument" | "forexSession" | "asset" | "instrumentFavorite" | "marketAlert"
+    modelProps: "season" | "user" | "userAuthToken" | "category" | "session" | "instrumentWindow" | "instrument" | "forexSession" | "asset" | "instrumentFavorite" | "marketAlert" | "academyCourse"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1241,6 +1242,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AcademyCourse: {
+      payload: Prisma.$AcademyCoursePayload<ExtArgs>
+      fields: Prisma.AcademyCourseFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AcademyCourseFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AcademyCourseFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>
+        }
+        findFirst: {
+          args: Prisma.AcademyCourseFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AcademyCourseFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>
+        }
+        findMany: {
+          args: Prisma.AcademyCourseFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>[]
+        }
+        create: {
+          args: Prisma.AcademyCourseCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>
+        }
+        createMany: {
+          args: Prisma.AcademyCourseCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AcademyCourseCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>[]
+        }
+        delete: {
+          args: Prisma.AcademyCourseDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>
+        }
+        update: {
+          args: Prisma.AcademyCourseUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>
+        }
+        deleteMany: {
+          args: Prisma.AcademyCourseDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AcademyCourseUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AcademyCourseUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>[]
+        }
+        upsert: {
+          args: Prisma.AcademyCourseUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AcademyCoursePayload>
+        }
+        aggregate: {
+          args: Prisma.AcademyCourseAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAcademyCourse>
+        }
+        groupBy: {
+          args: Prisma.AcademyCourseGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AcademyCourseGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AcademyCourseCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AcademyCourseCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1430,6 +1505,29 @@ export const MarketAlertScalarFieldEnum = {
 export type MarketAlertScalarFieldEnum = (typeof MarketAlertScalarFieldEnum)[keyof typeof MarketAlertScalarFieldEnum]
 
 
+export const AcademyCourseScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  slug: 'slug',
+  title: 'title',
+  domain: 'domain',
+  path: 'path',
+  level: 'level',
+  summary: 'summary',
+  objectives: 'objectives',
+  content: 'content',
+  sourceMarkdown: 'sourceMarkdown',
+  status: 'status',
+  version: 'version',
+  verifiedById: 'verifiedById',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AcademyCourseScalarFieldEnum = (typeof AcademyCourseScalarFieldEnum)[keyof typeof AcademyCourseScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1444,6 +1542,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1593,6 +1698,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'AcademyCourseStatus'
+ */
+export type EnumAcademyCourseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AcademyCourseStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'AcademyCourseStatus[]'
+ */
+export type ListEnumAcademyCourseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AcademyCourseStatus[]'>
     
 
 /**
@@ -1757,6 +1876,7 @@ export type GlobalOmitConfig = {
   asset?: Prisma.AssetOmit
   instrumentFavorite?: Prisma.InstrumentFavoriteOmit
   marketAlert?: Prisma.MarketAlertOmit
+  academyCourse?: Prisma.AcademyCourseOmit
 }
 
 /* Types for Logging */

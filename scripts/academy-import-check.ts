@@ -1,0 +1,59 @@
+import assert from "node:assert/strict";
+import { parseAcademyMarkdown } from "../lib/academy-import.js";
+
+const question = (index: number) => `#### Question ${index} — Quel principe est vérifié dans cet exemple ?
+- [x] Le choix correct numéro ${index}
+- [ ] Un distracteur cohérent numéro ${index}
+- [ ] Un autre distracteur numéro ${index}
+
+Explication : Cette explication relie le choix correct au concept étudié dans le cours.`;
+
+const markdown = `---
+code: A1-02
+slug: sessions-de-trading
+title: Les sessions de trading
+domain: A
+path: A1
+level: Débutant
+summary: Comprendre les horaires et les caractéristiques des sessions de marché.
+objectives:
+  - Identifier les principales sessions de marché.
+  - Comparer les horaires locaux et les fuseaux.
+---
+${Array.from({ length: 4 }, (_, moduleIndex) => `## Module ${moduleIndex + 1} — Module de test ${moduleIndex + 1}
+
+${Array.from({ length: 3 }, (_, lessonIndex) => `### Leçon ${lessonIndex + 1} — Leçon de test ${lessonIndex + 1} (8 min)
+
+Cette leçon explique une notion de marché avec un exemple détaillé, indique ses limites et rappelle qu’il s’agit d’un contenu pédagogique.
+`).join("\n")}
+### Quiz du module
+
+${Array.from({ length: 8 }, (_, questionIndex) => question(questionIndex + 1)).join("\n\n")}
+`).join("\n")}
+## Examen final
+
+${Array.from({ length: 30 }, (_, questionIndex) => question(questionIndex + 1)).join("\n\n")}
+`;
+
+const valid = parseAcademyMarkdown(markdown);
+assert.equal(valid.ok, true, valid.ok ? "" : valid.errors.join("\n"));
+if (valid.ok) {
+  assert.equal(valid.course.modules.length, 4);
+  assert.equal(valid.course.modules.reduce((sum, module) => sum + module.lessons.length, 0), 12);
+  assert.equal(valid.course.exam.length, 30);
+  assert.equal(valid.course.estimatedMinutes, 96);
+}
+
+const tooFewExamQuestions = parseAcademyMarkdown(markdown.replace(question(30), ""));
+assert.equal(tooFewExamQuestions.ok, false);
+assert.match(tooFewExamQuestions.ok ? "" : tooFewExamQuestions.errors.join(" "), /examen final doit contenir au moins 30 questions/);
+
+const twoCorrectAnswers = parseAcademyMarkdown(markdown.replace("- [ ] Un distracteur cohérent numéro 1", "- [x] Un distracteur cohérent numéro 1"));
+assert.equal(twoCorrectAnswers.ok, false);
+assert.match(twoCorrectAnswers.ok ? "" : twoCorrectAnswers.errors.join(" "), /exactement une bonne réponse/);
+
+const oversized = parseAcademyMarkdown("x".repeat(512 * 1024 + 1));
+assert.equal(oversized.ok, false);
+assert.match(oversized.ok ? "" : oversized.errors.join(" "), /512 Ko/);
+
+console.log("Academy Markdown validation checks passed.");

@@ -61,7 +61,8 @@ export const ModelName = {
   ForexSession: 'ForexSession',
   Asset: 'Asset',
   InstrumentFavorite: 'InstrumentFavorite',
-  MarketAlert: 'MarketAlert'
+  MarketAlert: 'MarketAlert',
+  AcademyCourse: 'AcademyCourse'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -230,6 +231,29 @@ export const MarketAlertScalarFieldEnum = {
 export type MarketAlertScalarFieldEnum = (typeof MarketAlertScalarFieldEnum)[keyof typeof MarketAlertScalarFieldEnum]
 
 
+export const AcademyCourseScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  slug: 'slug',
+  title: 'title',
+  domain: 'domain',
+  path: 'path',
+  level: 'level',
+  summary: 'summary',
+  objectives: 'objectives',
+  content: 'content',
+  sourceMarkdown: 'sourceMarkdown',
+  status: 'status',
+  version: 'version',
+  verifiedById: 'verifiedById',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AcademyCourseScalarFieldEnum = (typeof AcademyCourseScalarFieldEnum)[keyof typeof AcademyCourseScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -244,6 +268,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

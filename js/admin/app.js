@@ -4,6 +4,7 @@ import { render as renderUsers } from './sections/users.js';
 import { render as renderInstruments } from './sections/instruments.js';
 import { render as renderCategories } from './sections/categories.js';
 import { render as renderSessions } from './sections/sessions.js';
+import { render as renderAcademy } from './sections/academy.js';
 
 const ROUTES = {
   dashboard: { title: 'Dashboard', render: renderDashboard },
@@ -11,6 +12,7 @@ const ROUTES = {
   instruments: { title: 'Instruments', render: renderInstruments },
   categories: { title: 'Catégories', render: renderCategories },
   sessions: { title: 'Séances', render: renderSessions },
+  academy: { title: 'Trading Academy', render: renderAcademy },
 };
 
 function currentRoute() {

@@ -5,6 +5,8 @@ import { timezonesList, getLocalTimezone, isInstrumentOpen } from './timezone.js
 import { setupMarketBell } from './bell.js';
 import { setupFavorites } from './favorites.js';
 import { setupLogin } from './login.js';
+import { setupAcademy } from './academy.js';
+import { featureFlags } from './feature-flags.js';
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
 
 // --- Data (loaded from /api, falls back to js/data.js) ---
@@ -107,6 +109,48 @@ const setupNavbarMenu = () => {
 };
 
 setupNavbarMenu();
+
+const homeView = document.getElementById('home-view');
+const academyRoot = document.getElementById('academy-view');
+const academyNavItem = document.getElementById('academy-nav-item');
+const academyController = setupAcademy(academyRoot, (route) => {
+  window.location.hash = route === 'home' ? '#apprendre' : `#apprendre/${route}`;
+});
+
+const syncPageRoute = () => {
+  const hash = window.location.hash.slice(1);
+  const academyRoute = hash === 'apprendre'
+    ? 'home'
+    : hash.startsWith('apprendre/')
+      ? hash.slice('apprendre/'.length)
+      : null;
+
+  if (!featureFlags.academy_enabled && academyRoute !== null) {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    return syncPageRoute();
+  }
+
+  const showAcademy = featureFlags.academy_enabled && academyRoute !== null;
+  homeView.hidden = showAcademy;
+  academyRoot.classList.toggle('hidden', !showAcademy);
+  academyNavItem.hidden = !featureFlags.academy_enabled;
+
+  document.querySelectorAll('.navbar-link[data-route]').forEach((link) => {
+    const route = link.dataset.route;
+    const active = route === 'apprendre'
+      ? showAcademy
+      : route === 'home'
+        ? !showAcademy && !['contact', 'apropos'].includes(hash)
+        : route === hash;
+    link.classList.toggle('is-active', active);
+    link.setAttribute('aria-current', active ? 'page' : 'false');
+  });
+
+  if (showAcademy) academyController.render(academyRoute || 'home');
+};
+
+window.addEventListener('hashchange', syncPageRoute);
+syncPageRoute();
 
 // --- Initialization ---
 const init = async () => {
