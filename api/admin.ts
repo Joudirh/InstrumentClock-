@@ -4,7 +4,7 @@ import { hashPassword } from "../lib/password.js";
 import { requireRole } from "../lib/session.js";
 import { parseAcademyMarkdown, type ParsedAcademyCourse } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
-import { generateAcademyMarkdown } from "../lib/academy-generation.js";
+import { generateValidatedAcademyCourse } from "../lib/academy-generation.js";
 import {
   deriveLegacyColumns,
   slugify,
@@ -193,40 +193,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         const courseEntry = { ...(entry ?? existing!), title, level };
         const slug = slugify(`${code}-${title}`);
-        let markdown: string;
+        let generated: Awaited<ReturnType<typeof generateValidatedAcademyCourse>>;
         try {
-          markdown = await generateAcademyMarkdown(
-            courseEntry,
-            instructions,
-            slug,
-          );
+          generated = await generateValidatedAcademyCourse(courseEntry, instructions, slug);
         } catch (error) {
           return json(res, 502, {
             error: error instanceof Error ? error.message : "La génération du cours a échoué.",
           });
         }
-        const parsed = parseAcademyMarkdown(markdown);
-        if (!parsed.ok) {
+        if (!generated.ok) {
           return json(res, 422, {
-            error: "Le contenu généré ne respecte pas le format pédagogique requis. Corrigez les consignes et réessayez.",
-            errors: parsed.errors,
+            error: "Gemini n’a pas produit un cours conforme après une tentative de correction. Réessayez ou ajoutez des consignes plus précises.",
+            errors: generated.errors,
           });
         }
-        if (
-          parsed.course.code !== code ||
-          parsed.course.slug !== slug ||
-          parsed.course.title !== title ||
-          parsed.course.domain !== courseEntry.domain ||
-          parsed.course.path !== courseEntry.path ||
-          parsed.course.level !== level
-        ) {
-          return json(res, 422, { error: "Gemini a modifié les métadonnées imposées du cours. Réessayez la génération." });
-        }
-        const saved = await saveAcademyDraft(markdown, parsed.course);
+
+        const saved = await saveAcademyDraft(generated.markdown, generated.course);
         if ("error" in saved) return json(res, 409, { error: saved.error });
         return json(res, 201, {
           course: { id: saved.saved.id, code: saved.saved.code, title: saved.saved.title, status: saved.saved.status },
-          sourceMarkdown: markdown,
+          sourceMarkdown: generated.markdown,
         });
       }
 

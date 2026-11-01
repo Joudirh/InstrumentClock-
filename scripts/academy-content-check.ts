@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { parseAcademyMarkdown } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
+import { generateValidatedAcademyCourse } from "../lib/academy-generation.js";
 
 assert.equal(ACADEMY_CATALOG.length, 71);
 assert.equal(new Set(ACADEMY_CATALOG.map((course) => course.code)).size, ACADEMY_CATALOG.length);
@@ -62,4 +63,41 @@ const oversized = parseAcademyMarkdown("x".repeat(512 * 1024 + 1));
 assert.equal(oversized.ok, false);
 assert.match(oversized.ok ? "" : oversized.errors.join(" "), /512 Ko/);
 
-console.log("Academy content validation checks passed.");
+const previousFetch = globalThis.fetch;
+const previousApiKey = process.env.GEMINI_API_KEY;
+let generationCalls = 0;
+let repairPrompt = "";
+process.env.GEMINI_API_KEY = "test-key";
+globalThis.fetch = async (_input, init) => {
+  generationCalls += 1;
+  if (generationCalls === 2) {
+    const request = JSON.parse(String(init?.body)) as {
+      contents: Array<{ parts: Array<{ text: string }> }>;
+    };
+    repairPrompt = request.contents[0].parts[0].text;
+  }
+  const generatedMarkdown = generationCalls === 1
+    ? markdown.slice(0, markdown.indexOf("## Module 2"))
+    : markdown;
+  return new Response(JSON.stringify({
+    candidates: [{ content: { parts: [{ text: generatedMarkdown }] }, finishReason: "STOP" }],
+  }), { status: 200, headers: { "Content-Type": "application/json" } });
+};
+
+try {
+  const generated = await generateValidatedAcademyCourse(
+    academyCatalogEntry("A1-02")!,
+    "",
+    "sessions-de-trading",
+  );
+  assert.equal(generated.ok, true, generated.ok ? "" : generated.errors.join("\n"));
+  assert.equal(generationCalls, 2);
+  assert.match(repairPrompt, /cours_precedent/);
+  assert.match(repairPrompt, /examen final doit contenir au moins 30 questions/);
+} finally {
+  globalThis.fetch = previousFetch;
+  if (previousApiKey === undefined) delete process.env.GEMINI_API_KEY;
+  else process.env.GEMINI_API_KEY = previousApiKey;
+}
+
+console.log("Academy content validation and generation-repair checks passed.");
