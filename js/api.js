@@ -5,6 +5,7 @@ import {
 
 // Map DB rows (Prisma shape) back to the front-end shape used by ui.js / timeline.js.
 const mapInstrument = (inst) => ({
+  id: inst.id,
   name: inst.name,
   description: inst.description || "",
   openDay: inst.openDay,

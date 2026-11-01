@@ -3,11 +3,13 @@ import { renderForexTimeline } from './timeline.js';
 import { renderInstruments, renderInstrumentPagination, renderTimezoneOptions, renderCategoryFilters, renderWorldClocks } from './ui.js';
 import { timezonesList, getLocalTimezone, isInstrumentOpen } from './timezone.js';
 import { setupMarketBell } from './bell.js';
+import { setupFavorites } from './favorites.js';
 import { setupLogin } from './login.js';
 import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.js';
 
 // --- Data (loaded from /api, falls back to js/data.js) ---
 let AppData = { instrumentCategories: [], forexSessions: [] };
+let appReady = false;
 
 // --- State ---
 const AppState = {
@@ -44,6 +46,24 @@ const scrollTopBtn = document.getElementById('scroll-top');
 
 // Cloche "marchés ouverts" : compte, badge vert/rouge, hovertext et panneau déroulant.
 const updateMarketBell = setupMarketBell(() => AppData);
+const favoritesController = setupFavorites({
+  container: instrumentsContainer,
+  button: document.getElementById('favorites-button'),
+  badge: document.getElementById('favorites-badge'),
+  panel: document.getElementById('favorites-panel'),
+  wrapper: document.getElementById('favorites-filter'),
+  loginButton: document.getElementById('login-btn'),
+  getInstrument: (instrumentId) => {
+    for (const category of AppData.instrumentCategories) {
+      const instrument = category.items.find((item) => item.id === instrumentId);
+      if (instrument) return { ...instrument, category: { name: category.name } };
+    }
+    return null;
+  },
+  onChange: () => {
+    if (appReady) renderAll();
+  }
+});
 
 // Boutons de connexion/déconnexion de la navbar (modale + cookie de session).
 const loginBtn = document.getElementById('login-btn');
@@ -167,6 +187,7 @@ const init = async () => {
   window.addEventListener('resize', debounce(() => renderAll(), 250));
 
   // Initial render
+  appReady = true;
   renderAll();
   
   // Setup system clock
@@ -236,7 +257,7 @@ const renderAll = (resetInstrumentsPage = false) => {
   renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  const pagination = renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal, AppState.instrumentsPage);
+  const pagination = renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal, AppState.instrumentsPage, favoritesController.getInstrumentIds());
   AppState.instrumentsPage = pagination.currentPage;
   renderInstrumentPagination(instrumentsPagination, pagination.currentPage, pagination.totalPages);
   

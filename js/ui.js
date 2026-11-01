@@ -159,7 +159,7 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
   `;
 };
 
-export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false, sortOptimal = false, requestedPage = 1) => {
+export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false, sortOptimal = false, requestedPage = 1, favoriteIds = new Set()) => {
   containerEl.innerHTML = '';
 
   const normalizedQuery = normalizeText(searchQuery).trim();
@@ -281,6 +281,10 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
             <div class="inst-status ${isOpen ? 'status-open' : 'status-closed'}">
               ${isOpen ? '🟢 OUVERT' : '🔴 FERMÉ'}
             </div>
+            ${Number.isInteger(inst.id) ? `
+              <button type="button" class="inst-favorite-btn${favoriteIds.has(inst.id) ? ' active' : ''}" data-instrument-id="${inst.id}" aria-pressed="${favoriteIds.has(inst.id)}" aria-label="${favoriteIds.has(inst.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}" title="${favoriteIds.has(inst.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="${favoriteIds.has(inst.id) ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"></path></svg>
+              </button>` : ''}
             <button type="button" class="inst-info-btn${openDetails.has(detailsKey(inst)) ? ' active' : ''}" data-inst="${detailsKey(inst)}" aria-expanded="${openDetails.has(detailsKey(inst)) ? 'true' : 'false'}" aria-label="Afficher ou masquer les détails de l'instrument" title="Détails de l'instrument">
               <svg class="inst-caret" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4.25L6 8.25L10 4.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
@@ -625,16 +629,17 @@ export const renderTimezoneOptions = (selectEl, timezonesList, currentTz) => {
 
 export const renderCategoryFilters = (selectEl, categories, currentFilter) => {
   selectEl.innerHTML = '';
+  const totalInstruments = categories.reduce((total, category) => total + category.items.length, 0);
 
   const allOption = document.createElement('option');
   allOption.value = 'all';
-  allOption.textContent = 'Tous les instruments';
+  allOption.textContent = `Tous les instruments (${totalInstruments})`;
   selectEl.appendChild(allOption);
 
   categories.forEach(cat => {
     const option = document.createElement('option');
     option.value = cat.id;
-    option.textContent = cat.name;
+    option.textContent = `${cat.name} (${cat.items.length})`;
     selectEl.appendChild(option);
   });
 

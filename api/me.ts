@@ -60,23 +60,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (path === "favorites" && method === "GET") {
     const favs = await prisma.instrumentFavorite.findMany({
       where: { userId: user.id },
-      include: { instrument: { select: { id: true, name: true, slug: true, description: true, session: { select: { slug: true, name: true } } } } },
+      include: { instrument: { select: { id: true, name: true, slug: true, description: true, category: { select: { name: true } }, session: { select: { slug: true, name: true } } } } },
       orderBy: { createdAt: "desc" },
     });
-    return json(res, 200, { favorites: favs.map((f) => ({ id: f.id, instrument: f.instrument, createdAt: f.createdAt })) });
+    return json(res, 200, { favorites: favs.map((f) => ({ id: f.id, instrumentId: f.instrumentId, instrument: f.instrument, createdAt: f.createdAt })) });
   }
   if (path === "favorites" && method === "POST") {
     const body = bodyOf(req);
     const instrumentId = Number(body.instrumentId);
-    if (!Number.isInteger(instrumentId)) return json(res, 400, { error: "instrumentId requis" });
+    if (!Number.isInteger(instrumentId) || instrumentId < 1) return json(res, 400, { error: "instrumentId invalide" });
     const inst = await prisma.instrument.findUnique({ where: { id: instrumentId } });
     if (!inst) return json(res, 404, { error: "Instrument introuvable" });
-    const fav = await prisma.instrumentFavorite.create({ data: { userId: user.id, instrumentId } });
-    return json(res, 201, { favorite: fav });
+    const fav = await prisma.instrumentFavorite.upsert({
+      where: { userId_instrumentId: { userId: user.id, instrumentId } },
+      update: {},
+      create: { userId: user.id, instrumentId },
+    });
+    return json(res, 200, { favorite: fav });
   }
   if (path === "favorites" && method === "DELETE") {
-    const id = Number((req as any).query?.id);
-    if (!Number.isInteger(id)) return json(res, 400, { error: "id requis" });
+    const id = Number(req.query.id);
+    if (!Number.isInteger(id) || id < 1) return json(res, 400, { error: "id invalide" });
     const fav = await prisma.instrumentFavorite.findUnique({ where: { id } });
     if (!fav || fav.userId !== user.id) return json(res, 404, { error: "Favori introuvable" });
     await prisma.instrumentFavorite.delete({ where: { id } });
