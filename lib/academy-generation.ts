@@ -4,26 +4,26 @@ import { parseAcademyMarkdown, type ParsedAcademyCourse } from "./academy-import
 const MAX_INSTRUCTIONS_LENGTH = 2_000;
 const GENERATION_TIMEOUT_MS = 24_000;
 
-function promptForCourse(
- course: AcademyCatalogEntry,
- slug: string,
- instructions: string,
- previousMarkdown?: string,
- validationErrors: string[] = [],
-): string {
- const repairInstructions = previousMarkdown
-   ? `\n\nLa version précédente ne passe pas la validation. Corrige-la impérativement en tenant compte de CHAQUE erreur :
-${validationErrors.map((error) => `- ${error}`).join("\n")}
+type GenerationRepair = {
+  previousMarkdown: string;
+  validationErrors: string[];
+};
 
-Réponds avec le cours complet corrigé, pas avec un résumé ni uniquement les parties manquantes. La version précédente à corriger est :
-<cours_precedent>
-${previousMarkdown}
-</cours_precedent>`
-   : "";
+function repairInstructions(markdown: string | undefined, errors: string[]): string {
+  if (!markdown) return "";
+  return `\n\nCorrige ta sortie précédente, qui a échoué à la validation. Respecte toutes ces erreurs :
+${errors.map((error) => `- ${error}`).join("\n")}
 
- return `Tu es concepteur pédagogique spécialisé en éducation financière. Rédige en français un cours complet, rigoureux, neutre et adapté au niveau ${course.level}.
+Retourne le bloc complet corrigé, pas un résumé. Voici ta sortie précédente :
+<sortie_precedente>
+${markdown}
+</sortie_precedente>`;
+}
 
-Métadonnées à respecter exactement :
+function courseContext(course: AcademyCatalogEntry, slug: string, instructions: string): string {
+  return `Tu es concepteur pédagogique spécialisé en éducation financière. Rédige en français, avec un ton rigoureux et neutre, pour le niveau ${course.level}.
+
+Métadonnées exactes à utiliser :
 code: ${course.code}
 slug: ${slug}
 title: ${course.title}
@@ -31,49 +31,59 @@ domain: ${course.domain}
 path: ${course.path}
 level: ${course.level}
 
-Consignes pédagogiques supplémentaires de l’administrateur :
-${instructions || "Aucune. Construis le cours autour du titre et des objectifs pédagogiques appropriés."}
+Consignes de l’administrateur :
+${instructions || "Aucune consigne complémentaire. Déduis des objectifs pertinents du titre du cours."}
 
-Retourne uniquement le Markdown final, sans bloc de code ni commentaire autour. Respecte les intitulés, niveaux de titres et volumes ci-dessous. Les titres et nombres sont importants car un validateur automatique les lit.
-
-1. En-tête YAML entre deux lignes --- avec code, slug, title, domain, path, level, summary (30 à 500 caractères) et objectives (au moins 2 éléments).
-2. Écris exactement 4 modules, numérotés de 1 à 4, avec les titres sous la forme « ## Module 1 — Titre ».
-3. Dans CHAQUE module, écris exactement 3 leçons. Chaque titre doit être une ligne au niveau H3, sous cette forme exacte : « ### Leçon 1 — Titre (8 min) ». Numérote les leçons de 1 à 3 dans chaque module. Chaque leçon dure de 5 à 12 minutes et contient au moins 80 caractères utiles, avec explication, exemple concret et limites. Utilise 8 minutes par leçon afin d’assurer 96 minutes au total.
-4. Après les 3 leçons de CHAQUE module, écris exactement « ### Quiz du module », puis au moins 8 questions.
-5. Termine par exactement « ## Examen final » puis au moins 30 questions.
-6. Chaque question a un titre H4 de la forme « #### Question 1 — Question complète ? », au moins 3 choix sur des lignes « - [ ] Choix » ou « - [x] Choix », exactement un choix [x], puis une ligne « Explication : texte de plus de 20 caractères ».
-7. Explique clairement tout exercice pratique. Reste éducatif, mentionne les risques, ne promets aucun gain et ne recommande aucun investissement.
-
-Format exact d’une question :
-#### Question 1 — Question complète ?
-- [ ] Une réponse incorrecte plausible
-- [x] La réponse correcte
-- [ ] Une autre réponse incorrecte plausible
-
-Explication : Justification pédagogique claire de la réponse correcte.${repairInstructions}`;
+Le contenu doit rester éducatif, mentionner les risques, ne promettre aucun gain et ne recommander aucun investissement.`;
 }
 
-export async function generateAcademyMarkdown(
+function modulesPrompt(
   course: AcademyCatalogEntry,
-  rawInstructions: string,
   slug: string,
-  repair?: { previousMarkdown: string; validationErrors: string[] },
+  instructions: string,
+  previousMarkdown?: string,
+  errors: string[] = [],
+): string {
+  return `${courseContext(course, slug, instructions)}
+
+Génère uniquement l’en-tête YAML et le contenu des modules, sans examen final ni texte avant/après.
+
+L’en-tête YAML entre lignes --- doit contenir exactement les métadonnées ci-dessus, un résumé de 30 à 500 caractères et au moins deux objectifs.
+
+Génère exactement 4 modules numérotés de 1 à 4 avec les titres « ## Module 1 — Titre ».
+Dans chaque module, génère exactement 3 leçons numérotées de 1 à 3, avec les titres « ### Leçon 1 — Titre (8 min) ». Chaque texte de leçon dépasse 80 caractères et contient une explication, un exemple concret et ses limites.
+Après les leçons, ajoute « ### Quiz du module » puis au moins 8 questions.
+
+Pour chaque question : titre H4 « #### Question 1 — Question complète ? »; au moins 3 réponses sur des lignes « - [ ] Choix » ou « - [x] Choix »; une seule bonne réponse [x]; puis « Explication : » suivie d’une justification de plus de 20 caractères.
+
+Numérote les sections comme indiqué. N’abrège et n’omet aucune leçon, aucun quiz ni aucune question.
+${repairInstructions(previousMarkdown, errors)}`;
+}
+
+function examPrompt(
+  course: AcademyCatalogEntry,
+  slug: string,
+  instructions: string,
+  previousMarkdown?: string,
+  errors: string[] = [],
+): string {
+  return `${courseContext(course, slug, instructions)}
+
+Génère uniquement la section d’examen final, sans en-tête YAML, modules, ni texte avant/après.
+Commence exactement par « ## Examen final » et écris au moins 30 questions distinctes couvrant les objectifs et sujets plausibles de ce cours.
+
+Pour chaque question : titre H4 « #### Question 1 — Question complète ? »; au moins 3 réponses sur des lignes « - [ ] Choix » ou « - [x] Choix »; une seule bonne réponse [x]; puis « Explication : » suivie d’une justification de plus de 20 caractères. Les distracteurs doivent être plausibles et les explications pédagogiques.
+
+N’abrège et n’omet aucune question.
+${repairInstructions(previousMarkdown, errors)}`;
+}
+
+async function requestGeminiText(
+  apiKey: string,
+  model: string,
+  prompt: string,
+  maxOutputTokens: number,
 ): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error("Clé Gemini manquante. Configurez GEMINI_API_KEY dans .env ou dans les variables Vercel.");
-  }
-
-  const instructions = rawInstructions.trim();
-  if (instructions.length > MAX_INSTRUCTIONS_LENGTH) {
-    throw new Error(`Les consignes supplémentaires ne peuvent pas dépasser ${MAX_INSTRUCTIONS_LENGTH} caractères.`);
-  }
-
-  const model = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
-  if (!/^[a-zA-Z0-9._-]+$/.test(model)) {
-    throw new Error("La configuration GEMINI_MODEL est invalide.");
-  }
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
   let response: Response;
@@ -85,24 +95,18 @@ export async function generateAcademyMarkdown(
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: promptForCourse(
-                course,
-                slug,
-                instructions,
-                repair?.previousMarkdown,
-                repair?.validationErrors,
-              ),
-            }],
-          }],
-          generationConfig: { temperature: 0.35, maxOutputTokens: 24_000 },
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.25,
+            maxOutputTokens,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
       },
     );
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("Gemini a dépassé le délai de génération. Réessayez.");
+      throw new Error("Gemini a dépassé le délai de génération d’un bloc. Réessayez.");
     }
     throw new Error("Connexion à Gemini impossible. Vérifiez la configuration réseau et réessayez.");
   } finally {
@@ -120,15 +124,61 @@ export async function generateAcademyMarkdown(
   }
   if (!response.ok) {
     const message = result.error?.message;
-    throw new Error(message ? `Gemini a refusé la génération : ${message}` : `Gemini a renvoyé une erreur HTTP ${response.status}.`);
+    throw new Error(message
+      ? `Gemini a refusé la génération : ${message}`
+      : `Gemini a renvoyé une erreur HTTP ${response.status}.`);
   }
 
   const candidate = result.candidates?.[0];
-  const markdown = candidate?.content?.parts?.map((part) => part.text ?? "").join("").trim();
-  if (!markdown) {
+  const text = candidate?.content?.parts?.map((part) => part.text ?? "").join("").trim();
+  if (!text) {
     throw new Error(`Gemini n’a renvoyé aucun contenu${candidate?.finishReason ? ` (${candidate.finishReason})` : ""}.`);
   }
-  return markdown.replace(/^```(?:markdown|md)?\s*/i, "").replace(/\s*```$/, "").trim();
+  if (candidate?.finishReason === "MAX_TOKENS") {
+    throw new Error("Gemini a tronqué un bloc du cours. Relancez la génération.");
+  }
+
+  return text.replace(/^```(?:markdown|md)?\s*/i, "").replace(/\s*```$/, "").trim();
+}
+
+export async function generateAcademyMarkdown(
+  course: AcademyCatalogEntry,
+  rawInstructions: string,
+  slug: string,
+  repair?: GenerationRepair,
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("Clé Gemini manquante. Configurez GEMINI_API_KEY dans .env ou dans les variables Vercel.");
+  }
+
+  const instructions = rawInstructions.trim();
+  if (instructions.length > MAX_INSTRUCTIONS_LENGTH) {
+    throw new Error(`Les consignes supplémentaires ne peuvent pas dépasser ${MAX_INSTRUCTIONS_LENGTH} caractères.`);
+  }
+
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+  if (!/^[a-zA-Z0-9._-]+$/.test(model)) {
+    throw new Error("La configuration GEMINI_MODEL est invalide.");
+  }
+
+  const previousModules = repair?.previousMarkdown.split(/^## Examen final\s*$/m)[0].trim();
+  const previousExam = repair?.previousMarkdown.match(/^## Examen final\s*[\s\S]*$/m)?.[0].trim();
+  const [modules, exam] = await Promise.all([
+    requestGeminiText(
+      apiKey,
+      model,
+      modulesPrompt(course, slug, instructions, previousModules, repair?.validationErrors ?? []),
+      18_000,
+    ),
+    requestGeminiText(
+      apiKey,
+      model,
+      examPrompt(course, slug, instructions, previousExam, repair?.validationErrors ?? []),
+      8_000,
+    ),
+  ]);
+  return `${modules}\n\n${exam}`.trim();
 }
 
 export async function generateValidatedAcademyCourse(

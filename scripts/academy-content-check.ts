@@ -66,21 +66,24 @@ assert.match(oversized.ok ? "" : oversized.errors.join(" "), /512 Ko/);
 const previousFetch = globalThis.fetch;
 const previousApiKey = process.env.GEMINI_API_KEY;
 let generationCalls = 0;
-let repairPrompt = "";
+const repairPrompts: string[] = [];
 process.env.GEMINI_API_KEY = "test-key";
 globalThis.fetch = async (_input, init) => {
   generationCalls += 1;
-  if (generationCalls === 2) {
-    const request = JSON.parse(String(init?.body)) as {
-      contents: Array<{ parts: Array<{ text: string }> }>;
-    };
-    repairPrompt = request.contents[0].parts[0].text;
-  }
-  const generatedMarkdown = generationCalls === 1
-    ? markdown.slice(0, markdown.indexOf("## Module 2"))
-    : markdown;
+  const request = JSON.parse(String(init?.body)) as {
+    contents: Array<{ parts: Array<{ text: string }> }>;
+  };
+  const prompt = request.contents[0].parts[0].text;
+  const isModuleRequest = prompt.includes("Génère uniquement l’en-tête YAML et le contenu des modules");
+  if (prompt.includes("sortie précédente")) repairPrompts.push(prompt);
+  const moduleAttempt = Math.ceil(generationCalls / 2);
+  const generatedText = isModuleRequest
+    ? moduleAttempt === 1
+      ? markdown.slice(0, markdown.indexOf("## Module 2"))
+      : markdown.slice(0, markdown.indexOf("## Examen final"))
+    : markdown.slice(markdown.indexOf("## Examen final"));
   return new Response(JSON.stringify({
-    candidates: [{ content: { parts: [{ text: generatedMarkdown }] }, finishReason: "STOP" }],
+    candidates: [{ content: { parts: [{ text: generatedText }] }, finishReason: "STOP" }],
   }), { status: 200, headers: { "Content-Type": "application/json" } });
 };
 
@@ -91,9 +94,10 @@ try {
     "sessions-de-trading",
   );
   assert.equal(generated.ok, true, generated.ok ? "" : generated.errors.join("\n"));
-  assert.equal(generationCalls, 2);
-  assert.match(repairPrompt, /cours_precedent/);
-  assert.match(repairPrompt, /examen final doit contenir au moins 30 questions/);
+  assert.equal(generationCalls, 4);
+  assert.equal(repairPrompts.length, 2);
+  assert.ok(repairPrompts.every((prompt) => prompt.includes("sortie_precedente")));
+  assert.ok(repairPrompts.some((prompt) => /cours publiable doit contenir de quatre à sept modules/.test(prompt)));
 } finally {
   globalThis.fetch = previousFetch;
   if (previousApiKey === undefined) delete process.env.GEMINI_API_KEY;
