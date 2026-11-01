@@ -4,7 +4,11 @@ import { hashPassword } from "../lib/password.js";
 import { requireRole } from "../lib/session.js";
 import { parseAcademyMarkdown, type ParsedAcademyCourse } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
-import { generateAcademyPart, type AcademyGenerationPart } from "../lib/academy-generation.js";
+import {
+  generateAcademyPart,
+  type AcademyGenerationPart,
+  type AcademyGenerationRepair,
+} from "../lib/academy-generation.js";
 import {
   deriveLegacyColumns,
   slugify,
@@ -241,9 +245,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return badRequest(res, ["Section de génération invalide."]);
         }
         const part: AcademyGenerationPart = { type: partBody.type, index: partBody.index };
+        let repair: AcademyGenerationRepair | undefined;
+        if (body.repair !== undefined) {
+          if (typeof body.repair !== "object" || body.repair === null) {
+            return badRequest(res, ["Données de correction invalides."]);
+          }
+          const repairBody = body.repair as Record<string, unknown>;
+          if (
+            typeof repairBody.previousText !== "string" ||
+            repairBody.previousText.length > 64 * 1024 ||
+            !Array.isArray(repairBody.errors) ||
+            repairBody.errors.length < 1 ||
+            repairBody.errors.length > 20 ||
+            repairBody.errors.some((error) => typeof error !== "string" || error.length > 500)
+          ) {
+            return badRequest(res, ["Données de correction invalides."]);
+          }
+          const errors = repairBody.errors.filter((error): error is string => typeof error === "string");
+          repair = {
+            previousText: repairBody.previousText,
+            errors,
+          };
+        }
         let text: string;
         try {
-          text = await generateAcademyPart(input.courseEntry, input.instructions, input.slug, part);
+          text = await generateAcademyPart(input.courseEntry, input.instructions, input.slug, part, repair);
         } catch (error) {
           return json(res, 502, {
             error: error instanceof Error ? error.message : "La génération du cours a échoué.",

@@ -164,6 +164,48 @@ function courseEditor(course) {
     </section>`;
 }
 
+function academyRepairTargets(errors) {
+    const modules = new Set();
+    const exam = new Set();
+    for (const error of errors) {
+      const moduleMatch = error.match(/module\s+(\d+)/i);
+      if (moduleMatch) {
+        const index = Number(moduleMatch[1]) - 1;
+        if (index >= 0 && index < 4) modules.add(index);
+      } else if (/examen final/i.test(error)) {
+        const questionMatch = error.match(/question\s+(\d+)/i);
+        if (questionMatch) {
+          exam.add(Math.floor((Number(questionMatch[1]) - 1) / 10));
+        } else {
+          [0, 1, 2].forEach((index) => exam.add(index));
+        }
+      } else if (/résumé|summary|objectifs?|en-tête yaml|métadonnées/i.test(error)) {
+        modules.add(0);
+      } else if (/module|leçon|pédagogique|durée/i.test(error)) {
+        [0, 1, 2, 3].forEach((index) => modules.add(index));
+      }
+    }
+    if (!modules.size && !exam.size) {
+      [0, 1, 2, 3].forEach((index) => modules.add(index));
+      [0, 1, 2].forEach((index) => exam.add(index));
+    }
+    return [
+      ...[...modules].map((index) => ({ type: 'module', index, partIndex: index })),
+      ...[...exam].map((index) => ({ type: 'exam', index, partIndex: index + 4 })),
+    ];
+}
+
+function academyRepairErrors(errors, target) {
+    return errors.filter((error) => {
+      if (target.type === 'exam') return /examen final/i.test(error);
+      if (/examen final/i.test(error)) return false;
+      const moduleMatch = error.match(/module\s+(\d+)/i);
+      if (moduleMatch) return Number(moduleMatch[1]) - 1 === target.index;
+      if (/résumé|summary|objectifs?|en-tête yaml|métadonnées/i.test(error)) return target.index === 0;
+      return true;
+    });
+}
+
 async function renderCourse(content, code) {
   const { course } = await api('GET', `/api/admin/academy?code=${encodeURIComponent(code)}`);
   content.innerHTML = courseEditor(course);
@@ -210,31 +252,50 @@ async function renderCourse(content, code) {
           level: level.value,
           instructions: instructions.value,
         };
-        const generatedParts = [];
-        for (let index = 0; index < 4; index += 1) {
-          progressText.textContent = `Gemini génère le module ${index + 1} sur 4…`;
+        const generatedParts = new Array(7);
+        const generatePart = async (type, index, repair) => {
+          const label = type === 'module'
+            ? `module ${index + 1} sur 4`
+            : `partie ${index + 1} sur 3 de l’examen final`;
+          progressText.textContent = repair
+            ? `Correction du ${label}…`
+            : `Gemini génère le ${label}…`;
           const result = await api('POST', '/api/admin/academy', {
             ...request,
             action: 'generate-part',
-            part: { type: 'module', index },
+            part: { type, index },
+            ...(repair ? { repair } : {}),
           });
-          generatedParts.push(result.text);
+          generatedParts[type === 'module' ? index : index + 4] = result.text;
+        };
+        for (let index = 0; index < 4; index += 1) {
+          await generatePart('module', index);
         }
         for (let index = 0; index < 3; index += 1) {
-          progressText.textContent = `Gemini génère la partie ${index + 1} sur 3 de l’examen final…`;
-          const result = await api('POST', '/api/admin/academy', {
-            ...request,
-            action: 'generate-part',
-            part: { type: 'exam', index },
-          });
-          generatedParts.push(result.text);
+          await generatePart('exam', index);
         }
-        progressText.textContent = 'Vérification et enregistrement du brouillon…';
-        const result = await api('POST', '/api/admin/academy', {
+        const saveGenerated = () => api('POST', '/api/admin/academy', {
           ...request,
           action: 'save-generated',
           markdown: generatedParts.join('\n\n'),
         });
+        progressText.textContent = 'Vérification et enregistrement du brouillon…';
+        let result;
+        try {
+          result = await saveGenerated();
+        } catch (error) {
+          if (error.status !== 422) throw error;
+          const errors = error.details?.length ? error.details : [error.message];
+          for (const target of academyRepairTargets(errors)) {
+            const targetErrors = academyRepairErrors(errors, target);
+            await generatePart(target.type, target.index, {
+              previousText: generatedParts[target.partIndex],
+              errors: targetErrors.length ? targetErrors : errors,
+            });
+          }
+          progressText.textContent = 'Nouvelle vérification et enregistrement du brouillon…';
+          result = await saveGenerated();
+        }
         toast('Cours généré et enregistré comme brouillon.');
         await renderCourse(content, result.course.code);
       }).finally(() => progress.classList.add('hidden'));

@@ -20,7 +20,7 @@ Le fichier `.env.example` documente ces variables sans contenir de clé réelle.
 
 1. Dans le dashboard, recherchez un cours et cliquez sur **Générer**.
 2. Vérifiez le titre et le niveau préremplis. Vous pouvez les modifier et ajouter des consignes complémentaires (2 000 caractères maximum).
-3. Lancez **Générer avec Gemini**. L’indicateur affiche la section en cours. Une fois les sept sections générées, le serveur vérifie le cours complet et l’enregistre comme brouillon. Si un appel échoue ou si le cours assemblé ne respecte pas les critères, aucun brouillon incomplet n’est enregistré; relancez alors la génération.
+3. Lancez **Générer avec Gemini**. L’indicateur affiche la section en cours. Une fois les sept sections générées, le serveur vérifie le cours complet et corrige une fois les sections concernées si des critères ne sont pas respectés. Le brouillon n’est enregistré qu’après validation complète. Si une correction échoue, aucun brouillon incomplet n’est enregistré; relancez alors la génération.
 4. Relisez le brouillon, modifiez le Markdown si besoin, puis enregistrez les modifications.
 5. Cochez la confirmation de relecture et publiez. La publication est revalidée côté serveur.
 6. Un brouillon peut être supprimé; le cours revient alors à l’état **Bientôt disponible**. Une fiche vide peut être réinitialisée à ses valeurs de catalogue.

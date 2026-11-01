@@ -120,6 +120,18 @@ try {
   assert.equal(generationCalls, 7);
   assert.equal(prompts.filter((prompt) => prompt.includes("Génère uniquement le module")).length, 4);
   assert.equal(prompts.filter((prompt) => prompt.includes("de l’examen final")).length, 3);
+  assert.match(prompts[0], /summary: Un résumé descriptif/);
+  assert.match(prompts[0], /objectives:\s+- Premier objectif pédagogique/);
+  await generateAcademyPart(
+    academyCatalogEntry("A1-02")!,
+    "",
+    "sessions-de-trading",
+    { type: "module", index: 3 },
+    { previousText: "Question sans réponse correcte", errors: ["Module 4 : indiquez exactement une bonne réponse."] },
+  );
+  assert.equal(generationCalls, 8);
+  assert.ok(prompts[7].includes("Question sans réponse correcte"));
+  assert.ok(prompts[7].includes("indiquez exactement une bonne réponse"));
   await assert.rejects(
     generateAcademyPart(academyCatalogEntry("A1-02")!, "", "sessions-de-trading", { type: "module", index: 4 }),
     /section de module demandée est invalide/,

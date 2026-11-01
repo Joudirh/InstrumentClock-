@@ -7,6 +7,24 @@ export type AcademyGenerationPart =
   | { type: "module"; index: number }
   | { type: "exam"; index: number };
 
+export type AcademyGenerationRepair = {
+  previousText: string;
+  errors: string[];
+};
+
+function repairInstructions(repair?: AcademyGenerationRepair): string {
+  if (!repair) return "";
+  return `
+
+La version précédente de cette section a échoué aux contrôles ci-dessous. Corrige tous les points et retourne la section complète, sans commentaire :
+${repair.errors.map((error) => `- ${error}`).join("\n")}
+
+Section à corriger :
+<section_precedente>
+${repair.previousText}
+</section_precedente>`;
+}
+
 function courseContext(course: AcademyCatalogEntry, slug: string, instructions: string): string {
   return `Tu es concepteur pédagogique spécialisé en éducation financière. Rédige en français, avec un ton rigoureux et neutre, pour le niveau ${course.level}.
 
@@ -29,6 +47,7 @@ function modulePrompt(
   slug: string,
   instructions: string,
   index: number,
+  repair?: AcademyGenerationRepair,
 ): string {
   const moduleNumber = index + 1;
   const metadata = index === 0
@@ -39,7 +58,12 @@ title: ${course.title}
 domain: ${course.domain}
 path: ${course.path}
 level: ${course.level}
-Ajoute un résumé de 30 à 500 caractères et au moins deux objectifs (liste YAML « - objectif »), puis le module.`
+Ajoute obligatoirement les champs suivants, en respectant exactement leur syntaxe :
+summary: Un résumé descriptif de 30 à 500 caractères.
+objectives:
+  - Premier objectif pédagogique d’au moins dix caractères.
+  - Deuxième objectif pédagogique d’au moins dix caractères.
+Puis ferme l’en-tête YAML par --- et génère le module.`
     : "Retourne uniquement le module demandé, sans en-tête YAML ni texte avant/après.";
 
   return `${courseContext(course, slug, instructions)}
@@ -50,7 +74,8 @@ Il contient exactement 3 leçons numérotées de 1 à 3, avec les titres « ### 
 Après les leçons, ajoute « ### Quiz du module » puis exactement 8 questions numérotées de 1 à 8.
 
 Pour chaque question : titre H4 « #### Question 1 — Question complète ? »; au moins 3 réponses sur des lignes « - [ ] Choix » ou « - [x] Choix »; une seule bonne réponse [x]; puis « Explication : » suivie d’une justification de plus de 20 caractères.
-N’abrège et n’omet aucune leçon, aucun quiz ni aucune question.`;
+N’abrège et n’omet aucune leçon, aucun quiz ni aucune question.
+${repairInstructions(repair)}`;
 }
 
 function examPrompt(
@@ -58,6 +83,7 @@ function examPrompt(
   slug: string,
   instructions: string,
   index: number,
+  repair?: AcademyGenerationRepair,
 ): string {
   const firstQuestion = index * 10 + 1;
   const lastQuestion = firstQuestion + 9;
@@ -67,7 +93,8 @@ function examPrompt(
 Génère uniquement les questions ${firstQuestion} à ${lastQuestion} de l’examen final. ${heading}
 Écris exactement 10 questions distinctes couvrant les objectifs et sujets plausibles du cours. Numérote-les dans l’ordre de ${firstQuestion} à ${lastQuestion}.
 Pour chaque question : titre H4 « #### Question ${firstQuestion} — Question complète ? »; au moins 3 réponses sur des lignes « - [ ] Choix » ou « - [x] Choix »; une seule bonne réponse [x]; puis « Explication : » suivie d’une justification de plus de 20 caractères. Les distracteurs doivent être plausibles et les explications pédagogiques.
-N’abrège et n’omet aucune question.`;
+N’abrège et n’omet aucune question.
+${repairInstructions(repair)}`;
 }
 
 async function requestGeminiText(
@@ -140,6 +167,7 @@ export async function generateAcademyPart(
   rawInstructions: string,
   slug: string,
   part: AcademyGenerationPart,
+  repair?: AcademyGenerationRepair,
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
@@ -163,7 +191,7 @@ export async function generateAcademyPart(
     return requestGeminiText(
       apiKey,
       model,
-      modulePrompt(course, slug, instructions, part.index),
+      modulePrompt(course, slug, instructions, part.index, repair),
       5_000,
     );
   }
@@ -174,7 +202,7 @@ export async function generateAcademyPart(
   return requestGeminiText(
     apiKey,
     model,
-    examPrompt(course, slug, instructions, part.index),
+    examPrompt(course, slug, instructions, part.index, repair),
     3_500,
   );
 }
