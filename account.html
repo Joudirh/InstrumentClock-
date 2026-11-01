@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mon compte — Trading Sessions Hub</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/i18n.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,10 +17,13 @@
         <span class="navbar-logo-mark">◆</span>
         <span class="navbar-logo-text">Trading Sessions Hub</span>
       </div>
-      <a class="navbar-link" href="/">Accueil</a>
-      <button id="account-logout-btn" class="icon-btn login-btn" aria-label="Déconnexion" title="Déconnexion">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-      </button>
+      <a class="navbar-link" href="/" data-i18n="nav.home">Accueil</a>
+      <div class="navbar-right">
+        <span data-language-switcher></span>
+        <button id="account-logout-btn" class="icon-btn login-btn" aria-label="Déconnexion" title="Déconnexion">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
     </div>
   </nav>
 
@@ -82,5 +86,6 @@
   </main>
 
   <script type="module" src="/js/user/app.js"></script>
+  <script type="module" src="/js/i18n/bootstrap.js"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@
   <title>Trading Sessions Hub</title>
   <meta name="description" content="Visualisez les horaires d'ouverture et de fermeture des marchés financiers mondiaux.">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/i18n.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,16 +23,17 @@
       </div>
 
       <ul class="navbar-menu" id="navbar-menu" role="menubar">
-        <li role="none"><a class="navbar-link is-active" href="#" data-route="home" role="menuitem">Accueil</a></li>
-        <li role="none"><a class="navbar-link" href="#formation" data-route="formation" role="menuitem">Formation</a></li>
-        <li role="none"><a class="navbar-link" href="#contact" data-route="contact" role="menuitem">Contact</a></li>
-        <li role="none"><a class="navbar-link" href="#apropos" data-route="apropos" role="menuitem">À propos</a></li>
+        <li role="none"><a class="navbar-link is-active" href="#" data-route="home" data-i18n="nav.home" role="menuitem">Accueil</a></li>
+        <li role="none"><a class="navbar-link" href="#formation" data-route="formation" data-i18n="nav.training" role="menuitem">Formation</a></li>
+        <li role="none"><a class="navbar-link" href="#contact" data-route="contact" data-i18n="nav.contact" role="menuitem">Contact</a></li>
+        <li role="none"><a class="navbar-link" href="#apropos" data-route="apropos" data-i18n="nav.about" role="menuitem">À propos</a></li>
         <li class="navbar-mobile-login" role="none">
-          <button id="mobile-login-btn" class="mobile-login-btn" type="button">Connexion</button>
+          <button id="mobile-login-btn" class="mobile-login-btn" data-i18n="nav.login" type="button">Connexion</button>
         </li>
       </ul>
 
       <div class="navbar-right">
+        <span data-language-switcher></span>
         <button id="theme-toggle" class="icon-btn" aria-label="Basculer le thème" title="Basculer le thème (clair/sombre)">
             <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
@@ -161,5 +163,6 @@
 
   <!-- Script d'entrée type module -->
   <script type="module" src="js/main.js"></script>
+  <script type="module" src="/js/i18n/bootstrap.js"></script>
 </body>
 </html>
