@@ -155,7 +155,12 @@ function courseEditor(course) {
         <p class="muted">Publié le ${formatDate(course.publishedAt)}${course.verifiedBy?.name ? ` · Vérifié par ${esc(course.verifiedBy.name)}` : ''}</p>
       `}
       <div class="academy-import-error hidden" id="academy-course-error" role="alert"></div>
-      <p class="academy-generation-progress hidden" id="academy-generation-progress" role="status">Gemini prépare et valide le cours. Cette opération peut prendre jusqu’à une minute…</p>
+      <div class="academy-generation-progress hidden" id="academy-generation-progress" role="status" aria-live="polite">
+        <div class="academy-generation-status">
+          <span class="academy-generation-spinner" aria-hidden="true"></span>
+          <span>Gemini génère et vérifie le cours. Merci de patienter…</span>
+        </div>
+      </div>
     </section>`;
 }
 

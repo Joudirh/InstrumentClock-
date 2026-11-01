@@ -2,7 +2,7 @@ import type { AcademyCatalogEntry } from "./academy-catalog.js";
 import { parseAcademyMarkdown, type ParsedAcademyCourse } from "./academy-import.js";
 
 const MAX_INSTRUCTIONS_LENGTH = 2_000;
-const GENERATION_TIMEOUT_MS = 24_000;
+const GENERATION_TIMEOUT_MS = 48_000;
 
 type GenerationRepair = {
   previousMarkdown: string;
@@ -87,6 +87,7 @@ async function requestGeminiText(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
   let response: Response;
+  let responseBody: string;
   try {
     response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
@@ -104,9 +105,10 @@ async function requestGeminiText(
         }),
       },
     );
+    responseBody = await response.text();
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("Gemini a dépassé le délai de génération d’un bloc. Réessayez.");
+      throw new Error("Gemini a dépassé le délai de 48 secondes pour un bloc. Réessayez.");
     }
     throw new Error("Connexion à Gemini impossible. Vérifiez la configuration réseau et réessayez.");
   } finally {
@@ -118,7 +120,7 @@ async function requestGeminiText(
     error?: { message?: string };
   };
   try {
-    result = await response.json() as typeof result;
+    result = JSON.parse(responseBody) as typeof result;
   } catch {
     throw new Error("Gemini a renvoyé une réponse illisible.");
   }
