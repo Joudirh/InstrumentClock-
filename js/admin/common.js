@@ -22,6 +22,7 @@ export const api = async (method, url, body) => {
   if (!res.ok) {
     const error = new Error((data && data.error) || `Erreur ${res.status}`);
     error.status = res.status;
+    error.code = data?.code;
     error.details = data?.errors;
     throw error;
   }

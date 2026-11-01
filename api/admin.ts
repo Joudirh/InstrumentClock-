@@ -5,6 +5,7 @@ import { requireRole } from "../lib/session.js";
 import { parseAcademyMarkdown, type ParsedAcademyCourse } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
 import {
+  GeminiOutputTruncatedError,
   generateAcademyPart,
   type AcademyGenerationPart,
   type AcademyGenerationRepair,
@@ -244,6 +245,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ) {
           return badRequest(res, ["Section de génération invalide."]);
         }
+        if (body.retryTruncated !== undefined && typeof body.retryTruncated !== "boolean") {
+          return badRequest(res, ["Option de nouvelle tentative invalide."]);
+        }
         const part: AcademyGenerationPart = { type: partBody.type, index: partBody.index };
         let repair: AcademyGenerationRepair | undefined;
         if (body.repair !== undefined) {
@@ -269,8 +273,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         let text: string;
         try {
-          text = await generateAcademyPart(input.courseEntry, input.instructions, input.slug, part, repair);
+          text = await generateAcademyPart(
+            input.courseEntry,
+            input.instructions,
+            input.slug,
+            part,
+            repair,
+            body.retryTruncated === true,
+          );
         } catch (error) {
+          if (error instanceof GeminiOutputTruncatedError) {
+            return json(res, 502, {
+              code: "GEMINI_OUTPUT_TRUNCATED",
+              error: error.message,
+            });
+          }
           return json(res, 502, {
             error: error instanceof Error ? error.message : "La génération du cours a échoué.",
           });

@@ -1430,3 +1430,122 @@ table.admin-table {
     grid-template-columns: 1fr;
   }
 }
+
+/* Shared glass theme for admin, account tools and dialogs */
+.admin-body,
+.admin-login-body {
+  background-color: var(--bg-color-main);
+  background-image:
+    radial-gradient(ellipse at 10% 0%, rgba(75, 186, 153, 0.13), transparent 34rem),
+    radial-gradient(ellipse at 95% 15%, rgba(109, 133, 216, 0.1), transparent 32rem);
+  background-attachment: fixed;
+}
+
+.sidebar,
+.admin-topbar,
+.card,
+.stat-card,
+.admin-table-wrap,
+.modal,
+.login-card,
+.login-modal-card {
+  border-color: var(--border-color);
+  background-color: var(--bg-color-card);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+}
+
+.sidebar {
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.08), transparent 65%);
+}
+
+[data-theme='dark'] .sidebar {
+  background-image: linear-gradient(160deg, rgba(194, 240, 226, 0.055), transparent 65%);
+}
+
+.admin-topbar {
+  background-color: var(--bg-color-header);
+}
+
+.card,
+.stat-card,
+.login-card {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 60%);
+}
+
+[data-theme='dark'] .card,
+[data-theme='dark'] .stat-card,
+[data-theme='dark'] .login-card {
+  background-image: linear-gradient(145deg, rgba(194, 240, 226, 0.055), transparent 60%);
+}
+
+.admin-table-wrap {
+  overflow: auto;
+}
+
+.admin-table {
+  background: transparent;
+}
+
+.admin-table th {
+  background: rgba(101, 224, 176, 0.055);
+}
+
+.admin-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+}
+
+.toolbar-input,
+.toolbar-select,
+.academy-field input,
+.academy-field select,
+.academy-field textarea,
+.academy-search,
+.field input,
+.field select,
+.field textarea {
+  background-color: color-mix(in srgb, var(--bg-color-main) 68%, transparent);
+  border-color: var(--border-color);
+}
+
+.btn-admin-primary,
+.login-modal .btn-admin-primary {
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 72%, #8a7de0));
+  color: var(--color-primary-contrast);
+}
+
+.btn-admin-primary:hover,
+.login-modal .btn-admin-primary:hover {
+  background: linear-gradient(135deg, var(--color-primary-hover), color-mix(in srgb, var(--color-primary-hover) 72%, #8a7de0));
+}
+
+.login-modal,
+.modal-root {
+  background: rgba(7, 18, 21, 0.48);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.badge,
+.academy-course-meta,
+.academy-generation-progress,
+.window-group,
+.window-empty {
+  background-color: color-mix(in srgb, var(--bg-color-card) 76%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@supports not ((backdrop-filter: blur(1px))) {
+  .sidebar,
+  .admin-topbar,
+  .card,
+  .stat-card,
+  .admin-table-wrap,
+  .modal,
+  .login-card,
+  .login-modal-card {
+    background-color: var(--bg-color-card);
+  }
+}

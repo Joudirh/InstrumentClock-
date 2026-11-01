@@ -1,15 +1,16 @@
 :root {
   --font-main: 'Inter', system-ui, sans-serif;
-  --bg-color-main: #f4f7f6;
-  --bg-color-card: #ffffff;
-  --bg-color-header: #ffffff;
-  --navbar-gradient: linear-gradient(110deg, #eaf4ff 0%, #f5f7ff 55%, #f5f0ff 100%);
-  --text-main: #1d1d1f;
-  --text-muted: #6e6e73;
-  --border-color: #e5e5ea;
+  --bg-color-main: #eaf3f1;
+  --bg-color-card: rgba(255, 255, 255, 0.66);
+  --bg-color-header: rgba(248, 255, 253, 0.72);
+  --navbar-gradient: linear-gradient(110deg, rgba(226, 246, 239, 0.82), rgba(241, 249, 250, 0.78) 55%, rgba(239, 237, 250, 0.8));
+  --text-main: #18312f;
+  --text-muted: #607673;
+  --border-color: rgba(66, 112, 103, 0.18);
   
-  --color-primary: #0071e3;
-  --color-primary-hover: #0077ed;
+  --color-primary: #168d65;
+  --color-primary-hover: #0c8058;
+  --color-primary-contrast: #ffffff;
   
   --color-sydney: #9FE1CB;
   --color-tokyo: #85B7EB;
@@ -20,28 +21,33 @@
   --color-open: #ff9f0a;
   --color-closed: #ff3b30;
   
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 2px 8px rgba(26, 73, 62, 0.06);
+  --shadow-md: 0 10px 28px rgba(26, 73, 62, 0.09);
+  --shadow-lg: 0 18px 48px rgba(26, 73, 62, 0.14);
+  --glass-blur: 18px;
   
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-md: 10px;
+  --radius-lg: 15px;
+  --radius-xl: 20px;
   
   --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 [data-theme='dark'] {
-  --bg-color-main: #121212;
-  --bg-color-card: #1e1e1E;
-  --bg-color-header: #1e1e1E;
-  --navbar-gradient: linear-gradient(110deg, #142b45 0%, #1a2340 55%, #29213d 100%);
-  --text-main: #f5f5f7;
-  --text-muted: #a1a1a6;
-  --border-color: #333336;
+  --bg-color-main: #0b1519;
+  --bg-color-card: rgba(19, 34, 41, 0.76);
+  --bg-color-header: rgba(10, 22, 27, 0.78);
+  --navbar-gradient: linear-gradient(110deg, rgba(15, 42, 48, 0.88), rgba(17, 35, 44, 0.86) 55%, rgba(33, 30, 52, 0.88));
+  --text-main: #edf5f3;
+  --text-muted: #a0b4b1;
+  --border-color: rgba(177, 218, 210, 0.14);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.16);
+  --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 20px 52px rgba(0, 0, 0, 0.32);
   
-  --color-primary: #2997ff;
-  --color-primary-hover: #40a5ff;
+  --color-primary: #65e0b0;
+  --color-primary-hover: #83edc3;
+  --color-primary-contrast: #09241b;
 }
 
 * {
@@ -53,10 +59,22 @@
 body {
   font-family: var(--font-main);
   background-color: var(--bg-color-main);
+  background-image:
+    radial-gradient(ellipse at 12% 0%, rgba(75, 186, 153, 0.12), transparent 34rem),
+    radial-gradient(ellipse at 92% 18%, rgba(109, 133, 216, 0.1), transparent 32rem),
+    radial-gradient(ellipse at 55% 100%, rgba(55, 155, 143, 0.08), transparent 38rem);
+  background-attachment: fixed;
   color: var(--text-main);
   line-height: 1.5;
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
+}
+
+[data-theme='dark'] body {
+  background-image:
+    radial-gradient(ellipse at 12% 0%, rgba(43, 149, 124, 0.2), transparent 34rem),
+    radial-gradient(ellipse at 92% 18%, rgba(76, 80, 148, 0.2), transparent 32rem),
+    radial-gradient(ellipse at 55% 100%, rgba(24, 105, 103, 0.14), transparent 38rem);
 }
 
 ::-webkit-scrollbar {
@@ -2233,3 +2251,116 @@ footer {
 .login-modal-toggle .link-btn:hover { text-decoration: underline; }
 .login-modal-error { font-size: 0.8rem; color: var(--color-closed); margin-bottom: 0.75rem; }
 .login-modal-error.hidden { display: none; }
+
+/* Shared translucent glass surfaces */
+.navbar,
+.tools-bar,
+.card,
+.system-clock,
+.instrument-card,
+.holiday-notice,
+.account-panel,
+.login-modal-card,
+.bell-panel,
+.favorites-panel,
+.language-menu,
+.toast {
+  border-color: var(--border-color);
+  background-color: var(--bg-color-card);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+}
+
+.navbar {
+  background: var(--navbar-gradient);
+  box-shadow: var(--shadow-sm);
+}
+
+.tools-bar {
+  background: var(--bg-color-header);
+}
+
+.card,
+.account-panel {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 58%);
+}
+
+[data-theme='dark'] .card,
+[data-theme='dark'] .account-panel {
+  background-image: linear-gradient(145deg, rgba(194, 240, 226, 0.055), transparent 58%);
+}
+
+.instrument-card {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 70%);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.instrument-card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--border-color));
+  box-shadow: var(--shadow-md);
+}
+
+.system-clock,
+.account-list-item,
+.account-list button,
+.btn-account,
+.filters-bar select,
+.search-filter input,
+.optimal-filter,
+.sort-btn,
+.bell-button,
+.favorites-button,
+.inst-country {
+  background-color: var(--bg-color-card);
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+}
+
+.navbar-link:hover,
+.nav-toggle:hover,
+.icon-btn:hover {
+  background-color: rgba(101, 224, 176, 0.1);
+}
+
+.navbar-link.is-active,
+.sort-btn.active {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.navbar-logo-text,
+.navbar-logo-short {
+  background-image: linear-gradient(135deg, var(--color-primary), #8a7de0);
+}
+
+.scroll-top-btn,
+.favorites-login {
+  color: var(--color-primary-contrast);
+}
+
+.account-list-item {
+  border-color: var(--border-color);
+}
+
+.login-modal {
+  background: rgba(7, 18, 21, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+@supports not ((backdrop-filter: blur(1px))) {
+  .navbar,
+  .tools-bar,
+  .card,
+  .system-clock,
+  .instrument-card,
+  .holiday-notice,
+  .account-panel,
+  .login-modal-card,
+  .bell-panel,
+  .favorites-panel,
+  .language-menu,
+  .toast {
+    background-color: var(--bg-color-card);
+  }
+}

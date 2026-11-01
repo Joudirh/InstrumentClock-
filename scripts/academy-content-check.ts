@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { parseAcademyMarkdown } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
-import { generateAcademyPart } from "../lib/academy-generation.js";
+import { GeminiOutputTruncatedError, generateAcademyPart } from "../lib/academy-generation.js";
 import { renderAcademyMarkdown } from "../js/academy-markdown.js";
 
 assert.equal(ACADEMY_CATALOG.length, 71);
@@ -98,7 +98,9 @@ assert.ok(renderedLesson.includes("&lt;img"));
 const previousFetch = globalThis.fetch;
 const previousApiKey = process.env.GEMINI_API_KEY;
 let generationCalls = 0;
+let truncateNextCall = false;
 const prompts: string[] = [];
+const tokenBudgets: number[] = [];
 const moduleSource = markdown.slice(markdown.indexOf("---", 4) + 3, markdown.indexOf("## Examen final")).trim();
 const yaml = markdown.slice(0, markdown.indexOf("---", 4) + 3);
 const moduleSections = moduleSource.split(/(?=^## Module \d+\s*[—-])/m).filter(Boolean);
@@ -120,7 +122,8 @@ globalThis.fetch = async (_input, init) => {
   };
   const prompt = request.contents[0].parts[0].text;
   prompts.push(prompt);
-  assert.ok(request.generationConfig.maxOutputTokens <= 5_000);
+  tokenBudgets.push(request.generationConfig.maxOutputTokens);
+  assert.ok(request.generationConfig.maxOutputTokens <= 16_000);
   const moduleMatch = prompt.match(/Génère uniquement le module (\d)/);
   const examMatch = prompt.match(/questions (\d+) à (\d+) de l’examen final/);
   const generatedText = moduleMatch
@@ -128,8 +131,10 @@ globalThis.fetch = async (_input, init) => {
     : examMatch
       ? examParts[Math.floor((Number(examMatch[1]) - 1) / 10)]
       : "";
+  const finishReason = truncateNextCall ? "MAX_TOKENS" : "STOP";
+  truncateNextCall = false;
   return new Response(JSON.stringify({
-    candidates: [{ content: { parts: [{ text: generatedText }] }, finishReason: "STOP" }],
+    candidates: [{ content: { parts: [{ text: generatedText }] }, finishReason }],
   }), { status: 200, headers: { "Content-Type": "application/json" } });
 };
 
@@ -154,6 +159,24 @@ try {
   assert.equal(prompts.filter((prompt) => prompt.includes("de l’examen final")).length, 3);
   assert.match(prompts[0], /summary: Un résumé descriptif/);
   assert.match(prompts[0], /objectives:\s+- Premier objectif pédagogique/);
+  truncateNextCall = true;
+  await assert.rejects(
+    generateAcademyPart(academyCatalogEntry("A1-02")!, "", "sessions-de-trading", {
+      type: "module",
+      index: 3,
+    }),
+    GeminiOutputTruncatedError,
+  );
+  assert.equal(tokenBudgets[7], 12_000);
+  await generateAcademyPart(
+    academyCatalogEntry("A1-02")!,
+    "",
+    "sessions-de-trading",
+    { type: "module", index: 3 },
+    undefined,
+    true,
+  );
+  assert.equal(tokenBudgets[8], 16_000);
   await generateAcademyPart(
     academyCatalogEntry("A1-02")!,
     "",
@@ -161,9 +184,9 @@ try {
     { type: "module", index: 3 },
     { previousText: "Question sans réponse correcte", errors: ["Module 4 : indiquez exactement une bonne réponse."] },
   );
-  assert.equal(generationCalls, 8);
-  assert.ok(prompts[7].includes("Question sans réponse correcte"));
-  assert.ok(prompts[7].includes("indiquez exactement une bonne réponse"));
+  assert.equal(generationCalls, 10);
+  assert.ok(prompts[9].includes("Question sans réponse correcte"));
+  assert.ok(prompts[9].includes("indiquez exactement une bonne réponse"));
   await assert.rejects(
     generateAcademyPart(academyCatalogEntry("A1-02")!, "", "sessions-de-trading", { type: "module", index: 4 }),
     /section de module demandée est invalide/,

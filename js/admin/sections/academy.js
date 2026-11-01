@@ -253,19 +253,30 @@ async function renderCourse(content, code) {
           instructions: instructions.value,
         };
         const generatedParts = new Array(7);
-        const generatePart = async (type, index, repair) => {
+        const generatePart = async (type, index, repair, retryTruncated = false) => {
           const label = type === 'module'
             ? `module ${index + 1} sur 4`
             : `partie ${index + 1} sur 3 de l’examen final`;
           progressText.textContent = repair
             ? `Correction du ${label}…`
+            : retryTruncated
+              ? `La section est longue; Gemini la reprend avec une limite de sortie plus élevée…`
             : `Gemini génère le ${label}…`;
-          const result = await api('POST', '/api/admin/academy', {
-            ...request,
-            action: 'generate-part',
-            part: { type, index },
-            ...(repair ? { repair } : {}),
-          });
+          const call = () => api('POST', '/api/admin/academy', {
+              ...request,
+              action: 'generate-part',
+              part: { type, index },
+              ...(repair ? { repair } : {}),
+              ...(retryTruncated ? { retryTruncated: true } : {}),
+            });
+          let result;
+          try {
+            result = await call();
+          } catch (error) {
+            if (error.code !== 'GEMINI_OUTPUT_TRUNCATED' || retryTruncated) throw error;
+            result = await generatePart(type, index, repair, true);
+            return;
+          }
           generatedParts[type === 'module' ? index : index + 4] = result.text;
         };
         for (let index = 0; index < 4; index += 1) {

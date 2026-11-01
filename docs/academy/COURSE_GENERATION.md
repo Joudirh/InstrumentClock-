@@ -14,7 +14,7 @@ La génération appelle Gemini depuis l’API serveur. La clé ne doit jamais ê
 - Sur Vercel, ajoutez `GEMINI_API_KEY` dans **Project Settings → Environment Variables** pour les environnements utilisés, puis redéployez.
 - Le modèle par défaut est `gemini-2.5-flash`. Pour en choisir un autre, configurez aussi `GEMINI_MODEL` côté serveur.
 
-Le fichier `.env.example` documente ces variables sans contenir de clé réelle. Pour éviter qu’une génération complète dépasse le délai d’une fonction Vercel, le navigateur demande séparément chacun des quatre modules et chacune des trois parties de l’examen. Chaque appel est limité à 40 secondes; le brouillon n’est enregistré qu’après assemblage et validation complète du cours.
+Le fichier `.env.example` documente ces variables sans contenir de clé réelle. Pour éviter qu’une génération complète dépasse le délai d’une fonction Vercel, le navigateur demande séparément chacun des quatre modules et chacune des trois parties de l’examen. Chaque appel est limité à 40 secondes; le brouillon n’est enregistré qu’après assemblage et validation complète du cours. Si Gemini tronque une section, celle-ci est automatiquement relancée une fois avec une limite de sortie plus élevée, sans régénérer les sections déjà terminées.
 
 ## Workflow
 

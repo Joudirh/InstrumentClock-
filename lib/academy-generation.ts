@@ -12,6 +12,13 @@ export type AcademyGenerationRepair = {
   errors: string[];
 };
 
+export class GeminiOutputTruncatedError extends Error {
+  constructor() {
+    super("Gemini a tronqué cette section. Une nouvelle tentative avec une limite de sortie plus élevée est possible.");
+    this.name = "GeminiOutputTruncatedError";
+  }
+}
+
 function repairInstructions(repair?: AcademyGenerationRepair): string {
   if (!repair) return "";
   return `
@@ -151,12 +158,12 @@ async function requestGeminiText(
   }
 
   const candidate = result.candidates?.[0];
+  if (candidate?.finishReason === "MAX_TOKENS") {
+    throw new GeminiOutputTruncatedError();
+  }
   const text = candidate?.content?.parts?.map((part) => part.text ?? "").join("").trim();
   if (!text) {
     throw new Error(`Gemini n’a renvoyé aucun contenu${candidate?.finishReason ? ` (${candidate.finishReason})` : ""}.`);
-  }
-  if (candidate?.finishReason === "MAX_TOKENS") {
-    throw new Error("Gemini a tronqué une section du cours. Relancez la génération.");
   }
 
   return text.replace(/^```(?:markdown|md)?\s*/i, "").replace(/\s*```$/, "").trim();
@@ -168,6 +175,7 @@ export async function generateAcademyPart(
   slug: string,
   part: AcademyGenerationPart,
   repair?: AcademyGenerationRepair,
+  retryTruncated = false,
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
@@ -192,7 +200,7 @@ export async function generateAcademyPart(
       apiKey,
       model,
       modulePrompt(course, slug, instructions, part.index, repair),
-      5_000,
+      retryTruncated ? 16_000 : 12_000,
     );
   }
 
@@ -203,6 +211,6 @@ export async function generateAcademyPart(
     apiKey,
     model,
     examPrompt(course, slug, instructions, part.index, repair),
-    3_500,
+    retryTruncated ? 12_000 : 8_000,
   );
 }
