@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { parseAcademyMarkdown } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
-import { generateValidatedAcademyCourse } from "../lib/academy-generation.js";
+import { generateAcademyPart } from "../lib/academy-generation.js";
 
 assert.equal(ACADEMY_CATALOG.length, 71);
 assert.equal(new Set(ACADEMY_CATALOG.map((course) => course.code)).size, ACADEMY_CATALOG.length);
@@ -66,42 +66,68 @@ assert.match(oversized.ok ? "" : oversized.errors.join(" "), /512 Ko/);
 const previousFetch = globalThis.fetch;
 const previousApiKey = process.env.GEMINI_API_KEY;
 let generationCalls = 0;
-const repairPrompts: string[] = [];
+const prompts: string[] = [];
+const moduleSource = markdown.slice(markdown.indexOf("---", 4) + 3, markdown.indexOf("## Examen final")).trim();
+const yaml = markdown.slice(0, markdown.indexOf("---", 4) + 3);
+const moduleSections = moduleSource.split(/(?=^## Module \d+\s*[—-])/m).filter(Boolean);
+const moduleParts = [`${yaml}\n${moduleSections[0]}`, ...moduleSections.slice(1)];
+const examSource = markdown.slice(markdown.indexOf("## Examen final"));
+const examQuestions = examSource
+  .replace(/^## Examen final\s*\n/, "")
+  .trim()
+  .split(/(?=^#### Question \d+\s*[—-])/m)
+  .filter(Boolean);
+const examParts = Array.from({ length: 3 }, (_, index) =>
+  `${index === 0 ? "## Examen final\n\n" : ""}${examQuestions.slice(index * 10, (index + 1) * 10).join("\n\n")}`);
 process.env.GEMINI_API_KEY = "test-key";
 globalThis.fetch = async (_input, init) => {
   generationCalls += 1;
   const request = JSON.parse(String(init?.body)) as {
     contents: Array<{ parts: Array<{ text: string }> }>;
+    generationConfig: { maxOutputTokens: number };
   };
   const prompt = request.contents[0].parts[0].text;
-  const isModuleRequest = prompt.includes("Génère uniquement l’en-tête YAML et le contenu des modules");
-  if (prompt.includes("sortie précédente")) repairPrompts.push(prompt);
-  const moduleAttempt = Math.ceil(generationCalls / 2);
-  const generatedText = isModuleRequest
-    ? moduleAttempt === 1
-      ? markdown.slice(0, markdown.indexOf("## Module 2"))
-      : markdown.slice(0, markdown.indexOf("## Examen final"))
-    : markdown.slice(markdown.indexOf("## Examen final"));
+  prompts.push(prompt);
+  assert.ok(request.generationConfig.maxOutputTokens <= 5_000);
+  const moduleMatch = prompt.match(/Génère uniquement le module (\d)/);
+  const examMatch = prompt.match(/questions (\d+) à (\d+) de l’examen final/);
+  const generatedText = moduleMatch
+    ? moduleParts[Number(moduleMatch[1]) - 1]
+    : examMatch
+      ? examParts[Math.floor((Number(examMatch[1]) - 1) / 10)]
+      : "";
   return new Response(JSON.stringify({
     candidates: [{ content: { parts: [{ text: generatedText }] }, finishReason: "STOP" }],
   }), { status: 200, headers: { "Content-Type": "application/json" } });
 };
 
 try {
-  const generated = await generateValidatedAcademyCourse(
-    academyCatalogEntry("A1-02")!,
-    "",
-    "sessions-de-trading",
-  );
+  const parts: string[] = [];
+  for (let index = 0; index < 4; index += 1) {
+    parts.push(await generateAcademyPart(academyCatalogEntry("A1-02")!, "", "sessions-de-trading", {
+      type: "module",
+      index,
+    }));
+  }
+  for (let index = 0; index < 3; index += 1) {
+    parts.push(await generateAcademyPart(academyCatalogEntry("A1-02")!, "", "sessions-de-trading", {
+      type: "exam",
+      index,
+    }));
+  }
+  const generated = parseAcademyMarkdown(parts.join("\n\n"));
   assert.equal(generated.ok, true, generated.ok ? "" : generated.errors.join("\n"));
-  assert.equal(generationCalls, 4);
-  assert.equal(repairPrompts.length, 2);
-  assert.ok(repairPrompts.every((prompt) => prompt.includes("sortie_precedente")));
-  assert.ok(repairPrompts.some((prompt) => /cours publiable doit contenir de quatre à sept modules/.test(prompt)));
+  assert.equal(generationCalls, 7);
+  assert.equal(prompts.filter((prompt) => prompt.includes("Génère uniquement le module")).length, 4);
+  assert.equal(prompts.filter((prompt) => prompt.includes("de l’examen final")).length, 3);
+  await assert.rejects(
+    generateAcademyPart(academyCatalogEntry("A1-02")!, "", "sessions-de-trading", { type: "module", index: 4 }),
+    /section de module demandée est invalide/,
+  );
 } finally {
   globalThis.fetch = previousFetch;
   if (previousApiKey === undefined) delete process.env.GEMINI_API_KEY;
   else process.env.GEMINI_API_KEY = previousApiKey;
 }
 
-console.log("Academy content validation and generation-repair checks passed.");
+console.log("Academy content validation and segmented generation checks passed.");

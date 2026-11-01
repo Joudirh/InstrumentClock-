@@ -14,13 +14,13 @@ La génération appelle Gemini depuis l’API serveur. La clé ne doit jamais ê
 - Sur Vercel, ajoutez `GEMINI_API_KEY` dans **Project Settings → Environment Variables** pour les environnements utilisés, puis redéployez.
 - Le modèle par défaut est `gemini-2.5-flash`. Pour en choisir un autre, configurez aussi `GEMINI_MODEL` côté serveur.
 
-Le fichier `.env.example` documente ces variables sans contenir de clé réelle. Pour limiter le délai, Gemini génère en parallèle le bloc des modules et celui de l’examen. La fonction Vercel dispose de la durée configurée dans `vercel.json`.
+Le fichier `.env.example` documente ces variables sans contenir de clé réelle. Pour éviter qu’une génération complète dépasse le délai d’une fonction Vercel, le navigateur demande séparément chacun des quatre modules et chacune des trois parties de l’examen. Chaque appel est limité à 40 secondes; le brouillon n’est enregistré qu’après assemblage et validation complète du cours.
 
 ## Workflow
 
 1. Dans le dashboard, recherchez un cours et cliquez sur **Générer**.
 2. Vérifiez le titre et le niveau préremplis. Vous pouvez les modifier et ajouter des consignes complémentaires (2 000 caractères maximum).
-3. Lancez **Générer avec Gemini**. Le serveur vérifie la structure et les volumes requis; si la première réponse est incomplète, il demande automatiquement une correction et valide une seconde fois. Aucun contenu non conforme n’est enregistré comme brouillon.
+3. Lancez **Générer avec Gemini**. L’indicateur affiche la section en cours. Une fois les sept sections générées, le serveur vérifie le cours complet et l’enregistre comme brouillon. Si un appel échoue ou si le cours assemblé ne respecte pas les critères, aucun brouillon incomplet n’est enregistré; relancez alors la génération.
 4. Relisez le brouillon, modifiez le Markdown si besoin, puis enregistrez les modifications.
 5. Cochez la confirmation de relecture et publiez. La publication est revalidée côté serveur.
 6. Un brouillon peut être supprimé; le cours revient alors à l’état **Bientôt disponible**. Une fiche vide peut être réinitialisée à ses valeurs de catalogue.

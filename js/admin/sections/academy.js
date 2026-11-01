@@ -201,14 +201,39 @@ async function renderCourse(content, code) {
     content.querySelector('#academy-generate').addEventListener('click', (event) => {
       const button = event.currentTarget;
       const progress = content.querySelector('#academy-generation-progress');
+      const progressText = progress.querySelector('.academy-generation-status span:last-child');
       report(button, async () => {
         progress.classList.remove('hidden');
-        const result = await api('POST', '/api/admin/academy', {
-          action: 'generate',
+        const request = {
           code,
           title: title.value,
           level: level.value,
           instructions: instructions.value,
+        };
+        const generatedParts = [];
+        for (let index = 0; index < 4; index += 1) {
+          progressText.textContent = `Gemini génère le module ${index + 1} sur 4…`;
+          const result = await api('POST', '/api/admin/academy', {
+            ...request,
+            action: 'generate-part',
+            part: { type: 'module', index },
+          });
+          generatedParts.push(result.text);
+        }
+        for (let index = 0; index < 3; index += 1) {
+          progressText.textContent = `Gemini génère la partie ${index + 1} sur 3 de l’examen final…`;
+          const result = await api('POST', '/api/admin/academy', {
+            ...request,
+            action: 'generate-part',
+            part: { type: 'exam', index },
+          });
+          generatedParts.push(result.text);
+        }
+        progressText.textContent = 'Vérification et enregistrement du brouillon…';
+        const result = await api('POST', '/api/admin/academy', {
+          ...request,
+          action: 'save-generated',
+          markdown: generatedParts.join('\n\n'),
         });
         toast('Cours généré et enregistré comme brouillon.');
         await renderCourse(content, result.course.code);

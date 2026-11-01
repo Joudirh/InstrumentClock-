@@ -4,7 +4,7 @@ import { hashPassword } from "../lib/password.js";
 import { requireRole } from "../lib/session.js";
 import { parseAcademyMarkdown, type ParsedAcademyCourse } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
-import { generateValidatedAcademyCourse } from "../lib/academy-generation.js";
+import { generateAcademyPart, type AcademyGenerationPart } from "../lib/academy-generation.js";
 import {
   deriveLegacyColumns,
   slugify,
@@ -80,6 +80,57 @@ async function saveAcademyDraft(markdown: string, course: ParsedAcademyCourse) {
         data: { ...data, code: course.code, slug: course.slug },
       });
   return { saved };
+}
+
+async function academyGenerationInput(
+  body: Record<string, unknown>,
+  res: VercelResponse,
+  requireApiKey = true,
+) {
+  const code = typeof body.code === "string" ? body.code.trim() : "";
+  const entry = academyCatalogEntry(code);
+  const existing = code ? await prisma.academyCourse.findUnique({ where: { code } }) : null;
+  if (!entry && !existing) {
+    badRequest(res, ["Cours inconnu"]);
+    return null;
+  }
+  if (existing?.status === "DRAFT") {
+    json(res, 409, { error: "Ce cours a déjà un brouillon. Modifiez-le ou supprimez-le avant d’en générer un autre." });
+    return null;
+  }
+  if (existing?.status === "PUBLISHED") {
+    json(res, 409, { error: "Ce cours est déjà publié." });
+    return null;
+  }
+
+  const title = typeof body.title === "string" ? body.title.trim() : existing?.title ?? entry!.title;
+  const level = typeof body.level === "string" ? body.level.trim() : existing?.level ?? entry!.level;
+  const instructions = typeof body.instructions === "string" ? body.instructions : "";
+  if (!title || title.length > 160) {
+    badRequest(res, ["Le titre doit contenir de 1 à 160 caractères."]);
+    return null;
+  }
+  if (!ACADEMY_LEVELS.has(level)) {
+    badRequest(res, ["Le niveau du cours est invalide."]);
+    return null;
+  }
+  if (instructions.length > 2_000) {
+    badRequest(res, ["Les consignes complémentaires ne peuvent pas dépasser 2 000 caractères."]);
+    return null;
+  }
+  if (requireApiKey && !process.env.GEMINI_API_KEY?.trim()) {
+    json(res, 503, { error: "Clé Gemini manquante. Configurez GEMINI_API_KEY côté serveur." });
+    return null;
+  }
+
+  return {
+    code,
+    title,
+    level,
+    instructions,
+    slug: slugify(`${code}-${title}`),
+    courseEntry: { ...(entry ?? existing!), title, level },
+  };
 }
 
 const PASSWORD_MIN = 8;
@@ -174,45 +225,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (method === "POST") {
       const body = bodyOf(req);
-      if (body.action === "generate") {
-        const code = typeof body.code === "string" ? body.code.trim() : "";
-        const entry = academyCatalogEntry(code);
-        const existing = code ? await prisma.academyCourse.findUnique({ where: { code } }) : null;
-        if (!entry && !existing) return badRequest(res, ["Cours inconnu"]);
-        if (existing?.status === "DRAFT") return json(res, 409, { error: "Ce cours a déjà un brouillon. Modifiez-le ou supprimez-le avant d’en générer un autre." });
-        if (existing?.status === "PUBLISHED") return json(res, 409, { error: "Ce cours est déjà publié." });
-
-        const title = typeof body.title === "string" ? body.title.trim() : existing?.title ?? entry!.title;
-        const level = typeof body.level === "string" ? body.level.trim() : existing?.level ?? entry!.level;
-        const instructions = typeof body.instructions === "string" ? body.instructions : "";
-        if (!title || title.length > 160) return badRequest(res, ["Le titre doit contenir de 1 à 160 caractères."]);
-        if (!ACADEMY_LEVELS.has(level)) return badRequest(res, ["Le niveau du cours est invalide."]);
-        if (instructions.length > 2_000) return badRequest(res, ["Les consignes complémentaires ne peuvent pas dépasser 2 000 caractères."]);
-        if (!process.env.GEMINI_API_KEY?.trim()) {
-          return json(res, 503, { error: "Clé Gemini manquante. Configurez GEMINI_API_KEY côté serveur." });
+      if (body.action === "generate-part") {
+        const input = await academyGenerationInput(body, res);
+        if (!input) return;
+        const partValue = body.part;
+        if (typeof partValue !== "object" || partValue === null) {
+          return badRequest(res, ["Section de génération invalide."]);
         }
-        const courseEntry = { ...(entry ?? existing!), title, level };
-        const slug = slugify(`${code}-${title}`);
-        let generated: Awaited<ReturnType<typeof generateValidatedAcademyCourse>>;
+        const partBody = partValue as Record<string, unknown>;
+        if (
+          (partBody.type !== "module" && partBody.type !== "exam") ||
+          typeof partBody.index !== "number" ||
+          !Number.isInteger(partBody.index)
+        ) {
+          return badRequest(res, ["Section de génération invalide."]);
+        }
+        const part: AcademyGenerationPart = { type: partBody.type, index: partBody.index };
+        let text: string;
         try {
-          generated = await generateValidatedAcademyCourse(courseEntry, instructions, slug);
+          text = await generateAcademyPart(input.courseEntry, input.instructions, input.slug, part);
         } catch (error) {
           return json(res, 502, {
             error: error instanceof Error ? error.message : "La génération du cours a échoué.",
           });
         }
-        if (!generated.ok) {
+        return json(res, 200, { text });
+      }
+
+      if (body.action === "save-generated") {
+        const input = await academyGenerationInput(body, res, false);
+        if (!input) return;
+        const markdown = typeof body.markdown === "string" ? body.markdown : "";
+        const parsed = parseAcademyMarkdown(markdown);
+        if (!parsed.ok) {
           return json(res, 422, {
-            error: "Gemini n’a pas produit un cours conforme après une tentative de correction. Réessayez ou ajoutez des consignes plus précises.",
-            errors: generated.errors,
+            error: "Gemini n’a pas produit un cours conforme. Réessayez la génération.",
+            errors: parsed.errors,
+          });
+        }
+        if (
+          parsed.course.code !== input.code ||
+          parsed.course.slug !== input.slug ||
+          parsed.course.title !== input.title ||
+          parsed.course.level !== input.level ||
+          parsed.course.domain !== input.courseEntry.domain ||
+          parsed.course.path !== input.courseEntry.path
+        ) {
+          return json(res, 422, {
+            error: "Les métadonnées générées ne correspondent pas au cours demandé.",
           });
         }
 
-        const saved = await saveAcademyDraft(generated.markdown, generated.course);
+        const saved = await saveAcademyDraft(markdown, parsed.course);
         if ("error" in saved) return json(res, 409, { error: saved.error });
         return json(res, 201, {
           course: { id: saved.saved.id, code: saved.saved.code, title: saved.saved.title, status: saved.saved.status },
-          sourceMarkdown: generated.markdown,
+          sourceMarkdown: markdown,
         });
       }
 

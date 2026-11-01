@@ -1,24 +1,11 @@
 import type { AcademyCatalogEntry } from "./academy-catalog.js";
-import { parseAcademyMarkdown, type ParsedAcademyCourse } from "./academy-import.js";
 
 const MAX_INSTRUCTIONS_LENGTH = 2_000;
-const GENERATION_TIMEOUT_MS = 48_000;
+const GENERATION_TIMEOUT_MS = 40_000;
 
-type GenerationRepair = {
-  previousMarkdown: string;
-  validationErrors: string[];
-};
-
-function repairInstructions(markdown: string | undefined, errors: string[]): string {
-  if (!markdown) return "";
-  return `\n\nCorrige ta sortie précédente, qui a échoué à la validation. Respecte toutes ces erreurs :
-${errors.map((error) => `- ${error}`).join("\n")}
-
-Retourne le bloc complet corrigé, pas un résumé. Voici ta sortie précédente :
-<sortie_precedente>
-${markdown}
-</sortie_precedente>`;
-}
+export type AcademyGenerationPart =
+  | { type: "module"; index: number }
+  | { type: "exam"; index: number };
 
 function courseContext(course: AcademyCatalogEntry, slug: string, instructions: string): string {
   return `Tu es concepteur pédagogique spécialisé en éducation financière. Rédige en français, avec un ton rigoureux et neutre, pour le niveau ${course.level}.
@@ -37,45 +24,50 @@ ${instructions || "Aucune consigne complémentaire. Déduis des objectifs pertin
 Le contenu doit rester éducatif, mentionner les risques, ne promettre aucun gain et ne recommander aucun investissement.`;
 }
 
-function modulesPrompt(
+function modulePrompt(
   course: AcademyCatalogEntry,
   slug: string,
   instructions: string,
-  previousMarkdown?: string,
-  errors: string[] = [],
+  index: number,
 ): string {
+  const moduleNumber = index + 1;
+  const metadata = index === 0
+    ? `Commence par un en-tête YAML entre lignes --- contenant exactement ces métadonnées :
+code: ${course.code}
+slug: ${slug}
+title: ${course.title}
+domain: ${course.domain}
+path: ${course.path}
+level: ${course.level}
+Ajoute un résumé de 30 à 500 caractères et au moins deux objectifs (liste YAML « - objectif »), puis le module.`
+    : "Retourne uniquement le module demandé, sans en-tête YAML ni texte avant/après.";
+
   return `${courseContext(course, slug, instructions)}
 
-Génère uniquement l’en-tête YAML et le contenu des modules, sans examen final ni texte avant/après.
-
-L’en-tête YAML entre lignes --- doit contenir exactement les métadonnées ci-dessus, un résumé de 30 à 500 caractères et au moins deux objectifs.
-
-Génère exactement 4 modules numérotés de 1 à 4 avec les titres « ## Module 1 — Titre ».
-Dans chaque module, génère exactement 3 leçons numérotées de 1 à 3, avec les titres « ### Leçon 1 — Titre (8 min) ». Chaque texte de leçon dépasse 80 caractères et contient une explication, un exemple concret et ses limites.
-Après les leçons, ajoute « ### Quiz du module » puis au moins 8 questions.
+${metadata}
+Génère uniquement le module ${moduleNumber}, avec le titre « ## Module ${moduleNumber} — Titre ».
+Il contient exactement 3 leçons numérotées de 1 à 3, avec les titres « ### Leçon 1 — Titre (8 min) ». Chaque texte de leçon dépasse 80 caractères et contient une explication, un exemple concret et ses limites.
+Après les leçons, ajoute « ### Quiz du module » puis exactement 8 questions numérotées de 1 à 8.
 
 Pour chaque question : titre H4 « #### Question 1 — Question complète ? »; au moins 3 réponses sur des lignes « - [ ] Choix » ou « - [x] Choix »; une seule bonne réponse [x]; puis « Explication : » suivie d’une justification de plus de 20 caractères.
-
-Numérote les sections comme indiqué. N’abrège et n’omet aucune leçon, aucun quiz ni aucune question.
-${repairInstructions(previousMarkdown, errors)}`;
+N’abrège et n’omet aucune leçon, aucun quiz ni aucune question.`;
 }
 
 function examPrompt(
   course: AcademyCatalogEntry,
   slug: string,
   instructions: string,
-  previousMarkdown?: string,
-  errors: string[] = [],
+  index: number,
 ): string {
+  const firstQuestion = index * 10 + 1;
+  const lastQuestion = firstQuestion + 9;
+  const heading = index === 0 ? "Commence exactement par « ## Examen final »." : "Ne répète pas le titre de l’examen.";
   return `${courseContext(course, slug, instructions)}
 
-Génère uniquement la section d’examen final, sans en-tête YAML, modules, ni texte avant/après.
-Commence exactement par « ## Examen final » et écris au moins 30 questions distinctes couvrant les objectifs et sujets plausibles de ce cours.
-
-Pour chaque question : titre H4 « #### Question 1 — Question complète ? »; au moins 3 réponses sur des lignes « - [ ] Choix » ou « - [x] Choix »; une seule bonne réponse [x]; puis « Explication : » suivie d’une justification de plus de 20 caractères. Les distracteurs doivent être plausibles et les explications pédagogiques.
-
-N’abrège et n’omet aucune question.
-${repairInstructions(previousMarkdown, errors)}`;
+Génère uniquement les questions ${firstQuestion} à ${lastQuestion} de l’examen final. ${heading}
+Écris exactement 10 questions distinctes couvrant les objectifs et sujets plausibles du cours. Numérote-les dans l’ordre de ${firstQuestion} à ${lastQuestion}.
+Pour chaque question : titre H4 « #### Question ${firstQuestion} — Question complète ? »; au moins 3 réponses sur des lignes « - [ ] Choix » ou « - [x] Choix »; une seule bonne réponse [x]; puis « Explication : » suivie d’une justification de plus de 20 caractères. Les distracteurs doivent être plausibles et les explications pédagogiques.
+N’abrège et n’omet aucune question.`;
 }
 
 async function requestGeminiText(
@@ -108,7 +100,7 @@ async function requestGeminiText(
     responseBody = await response.text();
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("Gemini a dépassé le délai de 48 secondes pour un bloc. Réessayez.");
+      throw new Error("Gemini a dépassé le délai de 40 secondes pour une section. Réessayez la génération.");
     }
     throw new Error("Connexion à Gemini impossible. Vérifiez la configuration réseau et réessayez.");
   } finally {
@@ -137,17 +129,17 @@ async function requestGeminiText(
     throw new Error(`Gemini n’a renvoyé aucun contenu${candidate?.finishReason ? ` (${candidate.finishReason})` : ""}.`);
   }
   if (candidate?.finishReason === "MAX_TOKENS") {
-    throw new Error("Gemini a tronqué un bloc du cours. Relancez la génération.");
+    throw new Error("Gemini a tronqué une section du cours. Relancez la génération.");
   }
 
   return text.replace(/^```(?:markdown|md)?\s*/i, "").replace(/\s*```$/, "").trim();
 }
 
-export async function generateAcademyMarkdown(
+export async function generateAcademyPart(
   course: AcademyCatalogEntry,
   rawInstructions: string,
   slug: string,
-  repair?: GenerationRepair,
+  part: AcademyGenerationPart,
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
@@ -164,61 +156,25 @@ export async function generateAcademyMarkdown(
     throw new Error("La configuration GEMINI_MODEL est invalide.");
   }
 
-  const previousModules = repair?.previousMarkdown.split(/^## Examen final\s*$/m)[0].trim();
-  const previousExam = repair?.previousMarkdown.match(/^## Examen final\s*[\s\S]*$/m)?.[0].trim();
-  const [modules, exam] = await Promise.all([
-    requestGeminiText(
-      apiKey,
-      model,
-      modulesPrompt(course, slug, instructions, previousModules, repair?.validationErrors ?? []),
-      18_000,
-    ),
-    requestGeminiText(
-      apiKey,
-      model,
-      examPrompt(course, slug, instructions, previousExam, repair?.validationErrors ?? []),
-      8_000,
-    ),
-  ]);
-  return `${modules}\n\n${exam}`.trim();
-}
-
-export async function generateValidatedAcademyCourse(
-  course: AcademyCatalogEntry,
-  instructions: string,
-  slug: string,
-): Promise<
-  | { ok: true; markdown: string; course: ParsedAcademyCourse }
-  | { ok: false; errors: string[] }
-> {
-  let markdown = "";
-  let validationErrors: string[] = [];
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    markdown = await generateAcademyMarkdown(
-      course,
-      instructions,
-      slug,
-      attempt === 1 ? { previousMarkdown: markdown, validationErrors } : undefined,
-    );
-
-    const parsed = parseAcademyMarkdown(markdown);
-    validationErrors = parsed.ok ? [] : parsed.errors;
-    if (parsed.ok) {
-      if (
-        parsed.course.code !== course.code ||
-        parsed.course.slug !== slug ||
-        parsed.course.title !== course.title ||
-        parsed.course.domain !== course.domain ||
-        parsed.course.path !== course.path ||
-        parsed.course.level !== course.level
-      ) {
-        validationErrors = ["Les métadonnées du cours doivent rester exactement celles fournies dans le prompt."];
-      } else {
-        return { ok: true, markdown, course: parsed.course };
-      }
+  if (part.type === "module") {
+    if (!Number.isInteger(part.index) || part.index < 0 || part.index >= 4) {
+      throw new Error("La section de module demandée est invalide.");
     }
+    return requestGeminiText(
+      apiKey,
+      model,
+      modulePrompt(course, slug, instructions, part.index),
+      5_000,
+    );
   }
 
-  return { ok: false, errors: validationErrors };
+  if (!Number.isInteger(part.index) || part.index < 0 || part.index >= 3) {
+    throw new Error("La section d’examen demandée est invalide.");
+  }
+  return requestGeminiText(
+    apiKey,
+    model,
+    examPrompt(course, slug, instructions, part.index),
+    3_500,
+  );
 }
