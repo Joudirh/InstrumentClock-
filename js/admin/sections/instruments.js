@@ -1,6 +1,7 @@
 import { api, esc, toast, ADMIN_ICONS } from '../common.js';
 import { openModal, confirmDialog } from '../modal.js';
 import { formatWindowSummary, buildWindowEditor } from '../windows.js';
+import { parseInstrumentCsv } from '../instrument-import.js';
 
 const state = { search: '', category: 'all', session: 'all' };
 
@@ -79,6 +80,10 @@ export async function render(content) {
     <div class="table-toolbar">
       ${filtersBar(sessions, categories)}
       <div class="spacer"></div>
+      <button class="btn-admin btn-admin-ghost" id="inst-import" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+        Importer CSV
+      </button>
       <button class="btn-admin btn-admin-primary" id="inst-add">${ADMIN_ICONS.plus} Nouvel instrument</button>
     </div>
     <div class="admin-table-wrap">
@@ -214,6 +219,158 @@ export async function render(content) {
     });
   }
 
+  function downloadImportTemplate() {
+    const headers = ['name', 'description', 'category', 'session', 'trading_windows', 'optimal_windows'];
+    const session = sessions[0];
+    const category = categories[0];
+    const quoteCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const sample = category && session
+      ? [
+          'EXEMPLE - À MODIFIER OU SUPPRIMER',
+          'Remplacez cette ligne par votre instrument ou supprimez-la.',
+          category.name,
+          session.name,
+          `1-5 08:00-17:00@${session.timezone}`,
+          `1-5 08:00-12:00@${session.timezone}`,
+        ]
+      : null;
+    const csv = [headers, ...(sample ? [sample] : [])]
+      .map((row) => row.map(quoteCsv).join(';'))
+      .join('\r\n') + '\r\n';
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'modele-import-instruments.csv';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function openImport() {
+    const modal = openModal({
+      title: 'Importer plusieurs instruments',
+      subtitle: 'Remplissez le modèle CSV dans Excel ou un tableur, puis importez-le ici.',
+      size: 'modal-lg',
+      body: `
+        <button class="btn-admin btn-admin-ghost import-template-btn" id="inst-template" type="button">Télécharger le modèle CSV</button>
+        <div class="import-guide">
+          <strong>Colonnes du modèle</strong>
+          <p><code>name</code>, <code>description</code>, <code>category</code>, <code>session</code>, <code>trading_windows</code>, <code>optimal_windows</code>.</p>
+          <p>Le modèle contient une ligne d’exemple : remplacez-la par votre instrument ou supprimez-la avant l’import.</p>
+          <p>Les catégories et séances doivent reprendre leur nom affiché dans l’administration. Une plage suit le format <code>1-5 08:00-17:00@Europe/Paris</code> (1 = lundi, 7 = dimanche).</p>
+          <p>Pour plusieurs plages du même type, séparez-les avec <code>|</code>. Vous pouvez ajouter un libellé avec <code>Session Londres~1-5 08:00-17:00@Europe/London</code>.</p>
+          <p>Pour une fin après minuit, utilisez une heure supérieure à 24, par exemple <code>1-5 22:00-26:00@Europe/Paris</code>.</p>
+          <p>Les colonnes de plages sont obligatoires. Chaque instrument doit avoir au moins une plage TRADING et une plage OPTIMAL. Maximum 12 plages par instrument et 100 instruments par import.</p>
+        </div>
+        <label class="field import-file-field">
+          <span>Fichier CSV</span>
+          <input id="inst-import-file" type="file" accept=".csv,text/csv">
+        </label>
+        <div id="inst-import-feedback" class="import-feedback" aria-live="polite"></div>`,
+      footerHtml: `
+        <button class="btn-admin btn-admin-ghost" type="button" data-modal-close>Fermer</button>
+        <button class="btn-admin btn-admin-primary" type="button" id="inst-import-submit" disabled>Importer les instruments</button>`,
+    });
+
+    const fileInput = modal.querySelector('#inst-import-file');
+    const submitButton = modal.querySelector('#inst-import-submit');
+    const feedback = modal.querySelector('#inst-import-feedback');
+    let parsedImport = null;
+
+    modal.querySelector('#inst-template').addEventListener('click', downloadImportTemplate);
+    fileInput.addEventListener('change', async () => {
+      parsedImport = null;
+      submitButton.disabled = true;
+      feedback.replaceChildren();
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        feedback.textContent = 'Sélectionnez un fichier .csv.';
+        feedback.className = 'import-feedback error';
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        feedback.textContent = 'Le fichier dépasse la limite de 2 Mo.';
+        feedback.className = 'import-feedback error';
+        return;
+      }
+
+      try {
+        const result = parseInstrumentCsv(await file.text(), { categories, sessions });
+        parsedImport = result;
+        const summary = document.createElement('p');
+        summary.textContent = `${result.instruments.length} ligne(s) valide(s) sur ${result.totalRows}.`;
+        feedback.appendChild(summary);
+        if (result.errors.length) {
+          const errorList = document.createElement('ul');
+          result.errors.forEach((message) => {
+            const item = document.createElement('li');
+            item.textContent = message;
+            errorList.appendChild(item);
+          });
+          feedback.appendChild(errorList);
+        }
+        feedback.className = `import-feedback${result.errors.length ? ' error' : ' success'}`;
+        submitButton.disabled = result.instruments.length === 0;
+      } catch (error) {
+        feedback.textContent = error.message;
+        feedback.className = 'import-feedback error';
+      }
+    });
+
+    submitButton.addEventListener('click', async () => {
+      if (!parsedImport?.instruments.length) return;
+      submitButton.disabled = true;
+      fileInput.disabled = true;
+      const errors = [...parsedImport.errors];
+      let imported = 0;
+      const progress = document.createElement('p');
+      progress.setAttribute('role', 'status');
+      progress.textContent = `Import en cours : 0/${parsedImport.instruments.length}.`;
+      feedback.replaceChildren(progress);
+      feedback.className = 'import-feedback';
+
+      for (let index = 0; index < parsedImport.instruments.length; index += 1) {
+        const instrument = parsedImport.instruments[index];
+        try {
+          await api('POST', '/api/admin/instruments', instrument);
+          imported += 1;
+        } catch (error) {
+          errors.push(`« ${instrument.name} » : ${error.message}`);
+        }
+        progress.textContent = `Import en cours : ${index + 1}/${parsedImport.instruments.length} — ${imported} créé(s).`;
+      }
+
+      if (imported > 0) {
+        toast(`${imported} instrument(s) importé(s)${errors.length ? `, ${errors.length} erreur(s)` : ''}`, errors.length ? 'error' : 'success');
+        try {
+          await render(content);
+        } catch (error) {
+          errors.push(`Import effectué, mais impossible d’actualiser le tableau : ${error.message}`);
+        }
+      }
+
+      feedback.replaceChildren();
+      const summary = document.createElement('p');
+      summary.textContent = `${imported} instrument(s) créé(s), ${errors.length} erreur(s).`;
+      feedback.appendChild(summary);
+      if (errors.length) {
+        const errorList = document.createElement('ul');
+        errors.forEach((message) => {
+          const item = document.createElement('li');
+          item.textContent = message;
+          errorList.appendChild(item);
+        });
+        feedback.appendChild(errorList);
+      }
+      feedback.className = `import-feedback${errors.length ? ' error' : ' success'}`;
+      fileInput.disabled = false;
+      submitButton.textContent = 'Importer un autre fichier';
+      submitButton.disabled = true;
+      parsedImport = null;
+    });
+  }
+
   function openDuplicate(source) {
     openForm({
       ...source,
@@ -241,6 +398,7 @@ export async function render(content) {
   }
 
   content.querySelector('#inst-add').addEventListener('click', () => openForm(null));
+  content.querySelector('#inst-import').addEventListener('click', openImport);
 
   bindRowActions();
 }
