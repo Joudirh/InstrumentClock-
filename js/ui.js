@@ -36,6 +36,8 @@ const renderSessionLabel = (inst) => {
 const normalizeText = (str) =>
   (str || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+const INSTRUMENTS_PER_PAGE = 10;
+
 /**
  * Proximité de la plage optimale la plus proche (horizon = semaine en cours).
  * - 0 si une plage OPTIMAL est en cours ;
@@ -139,7 +141,7 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
   `;
 };
 
-export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false, sortOptimal = false) => {
+export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false, sortOptimal = false, requestedPage = 1) => {
   containerEl.innerHTML = '';
 
   const normalizedQuery = normalizeText(searchQuery).trim();
@@ -149,9 +151,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
     ? instrumentCategories 
     : instrumentCategories.filter(c => c.id === selectedCategory);
 
-  categoriesToRender.forEach(category => {
-    let categoryVisible = 0;
-
+  const categoryQueues = categoriesToRender.map(category => {
     // Collecte filtrée avant rendu (le tri éventuel réordonne la file entière).
     const displayQueue = [];
     category.items.forEach(inst => {
@@ -171,8 +171,23 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       displayQueue.sort((a, b) => optimalProximity(a, now) - optimalProximity(b, now));
     }
 
+    return { category, displayQueue };
+  });
+
+  const totalItems = categoryQueues.reduce((total, { displayQueue }) => total + displayQueue.length, 0);
+  const totalPages = Math.max(1, Math.ceil(totalItems / INSTRUMENTS_PER_PAGE));
+  const currentPage = Math.min(Math.max(1, requestedPage), totalPages);
+  const firstItemIndex = (currentPage - 1) * INSTRUMENTS_PER_PAGE;
+  const lastItemIndex = firstItemIndex + INSTRUMENTS_PER_PAGE;
+  let itemIndex = 0;
+
+  categoryQueues.forEach(({ category, displayQueue }) => {
+    const categoryVisible = displayQueue.length;
     displayQueue.forEach(inst => {
-      categoryVisible += 1;
+      const currentItemIndex = itemIndex;
+      itemIndex += 1;
+      if (currentItemIndex < firstItemIndex || currentItemIndex >= lastItemIndex) return;
+
       const isOpen = isInstrumentOpen(inst);
       const hasWindows = Array.isArray(inst.windows) && inst.windows.length > 0;
 
@@ -318,6 +333,32 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
       if (willOpen) openDetails.add(key); else openDetails.delete(key);
     });
   }
+
+  return { currentPage, totalPages };
+};
+
+export const renderInstrumentPagination = (containerEl, currentPage, totalPages) => {
+  containerEl.replaceChildren();
+  containerEl.hidden = totalPages <= 1;
+  if (containerEl.hidden) return;
+
+  const addButton = (label, page, ariaLabel, { active = false, disabled = false } = {}) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `pagination-btn${active ? ' active' : ''}`;
+    button.textContent = label;
+    button.dataset.page = String(page);
+    button.setAttribute('aria-label', ariaLabel);
+    if (active) button.setAttribute('aria-current', 'page');
+    button.disabled = disabled;
+    containerEl.appendChild(button);
+  };
+
+  addButton('Précédent', currentPage - 1, 'Page précédente', { disabled: currentPage === 1 });
+  for (let page = 1; page <= totalPages; page += 1) {
+    addButton(String(page), page, `Page ${page}`, { active: page === currentPage });
+  }
+  addButton('Suivant', currentPage + 1, 'Page suivante', { disabled: currentPage === totalPages });
 };
 
 const renderInstAxis = () => {

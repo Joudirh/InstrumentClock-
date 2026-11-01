@@ -1,6 +1,6 @@
 import { fetchAppData } from './api.js';
 import { renderForexTimeline } from './timeline.js';
-import { renderInstruments, renderTimezoneOptions, renderCategoryFilters, renderWorldClocks } from './ui.js';
+import { renderInstruments, renderInstrumentPagination, renderTimezoneOptions, renderCategoryFilters, renderWorldClocks } from './ui.js';
 import { timezonesList, getLocalTimezone, isInstrumentOpen } from './timezone.js';
 import { setupMarketBell } from './bell.js';
 import { setupLogin } from './login.js';
@@ -18,7 +18,8 @@ const AppState = {
   status: 'all', // 'all', 'open', 'closed'
   search: '', // free-text instrument search
   optimalOnly: false, // show only instruments currently in their optimal window
-  sortOptimal: false // tri par plage optimale la plus proche de maintenant
+  sortOptimal: false, // tri par plage optimale la plus proche de maintenant
+  instrumentsPage: 1
 };
 
 // --- DOM Elements ---
@@ -27,6 +28,7 @@ const timezoneSelector = document.getElementById('timezone-selector');
 const themeToggle = document.getElementById('theme-toggle');
 const forexTimeline = document.getElementById('forex-timeline');
 const instrumentsContainer = document.getElementById('instruments-container');
+const instrumentsPagination = document.getElementById('instruments-pagination');
 const categoryTabs = document.getElementById('category-tabs');
 const statusSelector = document.getElementById('status-selector');
 const instrumentSearch = document.getElementById('instrument-search');
@@ -133,7 +135,7 @@ const init = async () => {
   themeToggle.addEventListener('click', handleThemeToggle);
   instrumentSearch.addEventListener('input', debounce((e) => {
     AppState.search = e.target.value.trim();
-    renderAll();
+    renderAll(true);
   }, 200));
 
   // Floating "back to top" button (visible while scrolled down, up or down)
@@ -150,7 +152,15 @@ const init = async () => {
   // Category dropdown filter
   categoryTabs.addEventListener('change', (e) => {
     AppState.category = e.target.value;
+    renderAll(true);
+  });
+
+  instrumentsPagination.addEventListener('click', (e) => {
+    const button = e.target.closest('button[data-page]');
+    if (!button || button.disabled) return;
+    AppState.instrumentsPage = Number(button.dataset.page);
     renderAll();
+    instrumentsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   // Update on window resize (to re-draw timeline smoothly if needed)
@@ -173,31 +183,31 @@ const init = async () => {
 const handleSeasonChange = (e) => {
   AppState.season = e.target.value;
   localStorage.setItem('season', AppState.season);
-  renderAll();
+  renderAll(true);
 };
 
 const handleTimezoneChange = (e) => {
   AppState.timezone = e.target.value;
   localStorage.setItem('timezone', AppState.timezone);
   AppState.resolvedTimezone = AppState.timezone === 'auto' ? getLocalTimezone() : AppState.timezone;
-  renderAll();
+  renderAll(true);
 };
 
 const handleStatusChange = (e) => {
   AppState.status = e.target.value;
-  renderAll();
+  renderAll(true);
 };
 
 const handleOptimalChange = (e) => {
   AppState.optimalOnly = e.target.checked;
-  renderAll();
+  renderAll(true);
 };
 
 const handleSortOptimal = () => {
   AppState.sortOptimal = !AppState.sortOptimal;
   sortOptimalBtn.classList.toggle('active', AppState.sortOptimal);
   sortOptimalBtn.setAttribute('aria-pressed', String(AppState.sortOptimal));
-  renderAll();
+  renderAll(true);
 };
 
 const handleThemeToggle = () => {
@@ -216,7 +226,9 @@ const handleThemeToggle = () => {
 };
 
 // --- Render Logic ---
-const renderAll = () => {
+const renderAll = (resetInstrumentsPage = false) => {
+  if (resetInstrumentsPage) AppState.instrumentsPage = 1;
+
   // 1. Render Timeline
   renderForexTimeline(forexTimeline, AppData.forexSessions, AppState.resolvedTimezone, AppState.season);
   
@@ -224,7 +236,9 @@ const renderAll = () => {
   renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal);
+  const pagination = renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal, AppState.instrumentsPage);
+  AppState.instrumentsPage = pagination.currentPage;
+  renderInstrumentPagination(instrumentsPagination, pagination.currentPage, pagination.totalPages);
   
   // 4. Holiday notice (optionnel)
   renderHolidayNotice();

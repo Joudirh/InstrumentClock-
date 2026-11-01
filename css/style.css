@@ -231,10 +231,14 @@ body {
 .tools-inner {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1rem;
   padding: 0.65rem 1rem;
   flex-wrap: wrap;
+}
+
+.tools-bar .control-group:first-of-type {
+  margin-left: auto;
 }
 
 .tools-bar .system-clock {
@@ -481,6 +485,10 @@ select:focus {
     justify-content: center;
     text-align: center;
     gap: 0.5rem;
+  }
+
+  .tools-bar .control-group:first-of-type {
+    margin-left: 0;
   }
 
   .tools-bar .system-clock {
@@ -891,12 +899,15 @@ select:focus {
   .optimal-filter {
     justify-content: center;
     text-align: center;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
   }
 
   .optimal-filter {
     gap: 0.3rem;
     padding: 0.4rem;
-    font-size: 0.8rem;
   }
 
   .toggle-label {
@@ -931,6 +942,12 @@ select:focus {
 
 .toggle-label-short {
   display: none;
+}
+
+@media (max-width: 767px) {
+  .optimal-filter .toggle-label-short {
+    display: inline;
+  }
 }
 
 .optimal-filter input {
@@ -986,6 +1003,62 @@ select:focus {
   display: grid;
   gap: 1rem;
   grid-template-columns: 1fr;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination[hidden] {
+  display: none;
+}
+
+.pagination-btn {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-color-card);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.pagination-btn:hover:not(:disabled),
+.pagination-btn.active {
+  border-color: var(--color-primary);
+}
+
+.pagination-btn:hover:not(:disabled) {
+  color: var(--color-primary);
+  background: rgba(0, 113, 227, 0.08);
+}
+
+.pagination-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Desktop layout: Table style */
