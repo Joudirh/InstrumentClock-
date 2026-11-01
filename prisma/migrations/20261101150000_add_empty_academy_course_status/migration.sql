@@ -1,1 +1,1 @@
-ALTER TYPE "AcademyCourseStatus" ADD VALUE 'EMPTY';
+ALTER TYPE "AcademyCourseStatus" ADD VALUE IF NOT EXISTS 'EMPTY';
