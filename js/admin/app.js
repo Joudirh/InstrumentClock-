@@ -16,7 +16,7 @@ const ROUTES = {
 };
 
 function currentRoute() {
-  const hash = window.location.hash.replace(/^#\/?/, '');
+  const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
   return ROUTES[hash] ? hash : 'dashboard';
 }
 

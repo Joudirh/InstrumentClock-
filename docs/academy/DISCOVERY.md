@@ -13,6 +13,6 @@ L’entrée Formation reste sur l’application existante avec `/#apprendre`; se
 
 L’administration réutilise `/dashboard#/academy`, la garde `requireRole(..., "ADMIN")` et le routeur regroupé `/api/admin/academy`. La migration Prisma `20261101100000_add_academy_courses` stocke les brouillons, les cours publiés, le Markdown source, la structure pédagogique JSON et l’identité de l’administrateur vérificateur. L’API publique `/api/academy` ne divulgue que les métadonnées et le texte des leçons; les quiz, leurs réponses et l’examen restent privés.
 
-Le format d’import et ses limites sont documentés dans `IMPORT_FORMAT.md`. La validation se fait côté serveur; la publication exige une confirmation de relecture et une nouvelle validation. Appliquer la migration avec `npm run db:deploy` ou, pour une base de développement locale, `npm run db:push` après configuration des variables Neon.
+Le workflow de génération Gemini, sa configuration serveur et ses règles de validation sont documentés dans `COURSE_GENERATION.md`. La publication exige une confirmation de relecture et une nouvelle validation. Appliquer les migrations avec `npm run db:deploy` après configuration des variables Neon.
 
 Le suivi de progression, les quiz interactifs, les récompenses, le glossaire dynamique et les API utilisateur restent hors de ce lot. Aucun XP, score ou avancement fictif n’est calculé.

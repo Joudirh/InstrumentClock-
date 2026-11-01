@@ -38,6 +38,7 @@ export type WindowKind = (typeof WindowKind)[keyof typeof WindowKind]
 
 
 export const AcademyCourseStatus = {
+  EMPTY: 'EMPTY',
   DRAFT: 'DRAFT',
   PUBLISHED: 'PUBLISHED'
 } as const

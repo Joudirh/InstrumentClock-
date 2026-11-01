@@ -15,7 +15,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "assets:upload": "tsx scripts/upload-assets.ts",
-    "academy:check-import": "tsx scripts/academy-import-check.ts"
+    "academy:check-content": "tsx scripts/academy-content-check.ts"
   },
   "repository": {
     "type": "git",

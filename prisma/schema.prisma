@@ -189,6 +189,7 @@ model MarketAlert {
 }
 
 enum AcademyCourseStatus {
+  EMPTY
   DRAFT
   PUBLISHED
 }

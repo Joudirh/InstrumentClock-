@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import { parseAcademyMarkdown } from "../lib/academy-import.js";
+import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
+
+assert.equal(ACADEMY_CATALOG.length, 71);
+assert.equal(new Set(ACADEMY_CATALOG.map((course) => course.code)).size, ACADEMY_CATALOG.length);
+assert.equal(academyCatalogEntry("A1-01")?.path, "A1");
+assert.equal(academyCatalogEntry("A1-01")?.domain, "A");
 
 const question = (index: number) => `#### Question ${index} — Quel principe est vérifié dans cet exemple ?
 - [x] Le choix correct numéro ${index}
@@ -56,4 +62,4 @@ const oversized = parseAcademyMarkdown("x".repeat(512 * 1024 + 1));
 assert.equal(oversized.ok, false);
 assert.match(oversized.ok ? "" : oversized.errors.join(" "), /512 Ko/);
 
-console.log("Academy Markdown validation checks passed.");
+console.log("Academy content validation checks passed.");

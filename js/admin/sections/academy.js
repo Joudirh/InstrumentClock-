@@ -1,255 +1,261 @@
-import { api, esc, toast, ADMIN_ICONS } from '../common.js';
+import { api, esc, toast } from '../common.js';
 
-let markdown = '';
-let validated = false;
-let validationSummary = null;
+const LEVELS = ['Débutant', 'Intermédiaire', 'Avancé', 'Expert'];
+const formatDate = (value) => value
+  ? new Date(value).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
+  : '—';
 
-const formatDate = (value) => new Date(value).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
-
-function validationMarkup(summary) {
-  if (!summary) return '';
-  return `
-    <div class="academy-import-preview">
-      <div class="academy-import-preview-head">
-        <span class="academy-import-success" aria-hidden="true">✓</span>
-        <div><strong>Structure valide</strong><p>Relisez le résumé avant d’enregistrer le brouillon.</p></div>
-      </div>
-      <div class="academy-import-summary">
-        <div><small>Code</small><strong>${esc(summary.code)}</strong></div>
-        <div><small>Niveau</small><strong>${esc(summary.level)}</strong></div>
-        <div><small>Modules</small><strong>${summary.moduleCount}</strong></div>
-        <div><small>Leçons</small><strong>${summary.lessonCount}</strong></div>
-        <div><small>Quiz / examen</small><strong>${summary.quizQuestionCount} / ${summary.examQuestionCount}</strong></div>
-        <div><small>Durée</small><strong>${summary.estimatedMinutes} min</strong></div>
-      </div>
-      <h3>${esc(summary.title)}</h3>
-      <p class="muted">${esc(summary.summary)}</p>
-      <p class="academy-import-objectives"><strong>Objectifs</strong><br>${summary.objectives.map(esc).join('<br>')}</p>
-      ${summary.existingStatus ? '<p class="academy-import-warning">Un brouillon avec ce code existe déjà. L’enregistrer remplacera sa version actuelle.</p>' : ''}
-      <details class="academy-import-source"><summary>Examiner le Markdown complet et les réponses</summary><pre>${esc(markdown)}</pre></details>
-      <label class="academy-verify-check">
-        <input id="academy-verify-check" type="checkbox">
-        <span>J’ai relu le contenu, vérifié les réponses et confirmé qu’il s’agit d’un contenu pédagogique sans conseil d’investissement ni promesse de gains.</span>
-      </label>
-      <div class="academy-import-actions">
-        <button class="btn-admin btn-admin-primary" id="academy-save-draft" type="button">${ADMIN_ICONS.plus} Enregistrer le brouillon</button>
-        <button class="btn-admin btn-admin-ghost" id="academy-publish-now" type="button" disabled>Publier comme vérifié</button>
-      </div>
-    </div>
-  `;
+function statusLabel(status) {
+  if (status === 'PUBLISHED') return 'Publié';
+  if (status === 'DRAFT') return 'Brouillon';
+  return 'Bientôt disponible';
 }
 
-function rowsMarkup(courses) {
-  if (!courses.length) return '<tr><td class="empty-state" colspan="5">Aucun cours importé. Commencez par déposer un fichier Markdown.</td></tr>';
+function statusClass(status) {
+  if (status === 'PUBLISHED') return 'is-published';
+  if (status === 'DRAFT') return 'is-draft';
+  return 'is-empty';
+}
+
+function renderRows(courses) {
   return courses.map((course) => `
     <tr>
       <td><div class="cell-identity"><strong>${esc(course.title)}</strong><small>${esc(course.code)} · ${esc(course.slug)}</small></div></td>
       <td>${esc(course.path)} · ${esc(course.domain)}</td>
-      <td><span class="academy-admin-status ${course.status === 'PUBLISHED' ? 'is-published' : 'is-draft'}">${course.status === 'PUBLISHED' ? 'Publié · vérifié' : 'Brouillon'}</span><small class="academy-admin-version">Version ${course.version}</small></td>
+      <td><span class="academy-admin-status ${statusClass(course.status)}">${statusLabel(course.status)}</span>${course.version ? `<small class="academy-admin-version">Version ${course.version}</small>` : ''}</td>
       <td>${course.verifiedBy ? esc(course.verifiedBy.name) : '—'}<small class="academy-admin-version">${formatDate(course.updatedAt)}</small></td>
-      <td><div class="cell-actions">
-        ${course.status === 'DRAFT' ? `<button class="btn-admin btn-admin-ghost academy-review-btn" type="button" data-review="${course.id}">Examiner</button><button class="btn-admin btn-admin-primary academy-publish-btn" type="button" data-publish="${course.id}">Publier</button><button class="icon-btn danger" type="button" data-delete="${course.id}" aria-label="Supprimer le brouillon ${esc(course.title)}" title="Supprimer">${ADMIN_ICONS.trash}</button>` : '<span class="muted">Visible au catalogue</span>'}
-      </div></td>
+      <td><button class="btn-admin btn-admin-primary academy-open-btn" type="button" data-open-course="${esc(course.code)}">${course.status === 'EMPTY' ? 'Générer' : course.status === 'DRAFT' ? 'Traiter' : 'Consulter'}</button></td>
     </tr>`).join('');
 }
 
-export async function render(content) {
-  const { courses } = await api('GET', '/api/admin/academy');
+function renderList(content, courses) {
+  const counts = courses.reduce((result, course) => {
+    result[course.status] = (result[course.status] || 0) + 1;
+    return result;
+  }, {});
   content.innerHTML = `
     <section class="academy-admin-intro">
       <div>
-        <p class="academy-admin-eyebrow">IMPORT SÉCURISÉ DU CONTENU</p>
-        <h2>Construire un cours à partir d’un fichier Markdown</h2>
-        <p>Le fichier est contrôlé côté serveur. Il est enregistré en brouillon, puis un administrateur le relit et le publie explicitement.</p>
+        <p class="academy-admin-eyebrow">TRADING ACADEMY</p>
+        <h2>Gestion et génération des cours</h2>
+        <p>Choisissez un cours pour le générer avec Gemini, modifier son brouillon, le vérifier ou le publier.</p>
       </div>
       <a class="btn-admin btn-admin-ghost" href="/#apprendre" target="_blank" rel="noreferrer">Voir la page Formation ↗</a>
     </section>
-
-    <section class="academy-admin-guide card">
-      <h3>Format requis</h3>
-      <p>En-tête YAML (code, slug, titre, domaine, parcours, niveau, résumé, objectifs), puis 4 à 7 modules. Chaque module contient 3 à 6 leçons de 5 à 12 minutes et un quiz de 8 questions minimum. L’examen final contient au moins 30 questions.</p>
-      <a href="/docs/academy/IMPORT_FORMAT.md" target="_blank" rel="noreferrer">Consulter le format et le modèle Markdown</a>
+    <section class="academy-admin-stats" aria-label="État des cours">
+      <span>${courses.length} cours au catalogue</span>
+      <span>${counts.EMPTY || 0} à générer</span>
+      <span>${counts.DRAFT || 0} brouillons</span>
+      <span>${counts.PUBLISHED || 0} publiés</span>
     </section>
-
-    <section class="academy-admin-import card">
-      <div class="academy-admin-card-heading">
-        <div><h3>1. Importer et valider</h3><p class="muted">Fichier .md, 512 Ko maximum. La validation ne publie rien.</p></div>
-        <label class="btn-admin btn-admin-ghost academy-file-button" for="academy-file">${ADMIN_ICONS.plus} Choisir un fichier .md</label>
-        <input id="academy-file" class="academy-file-input" type="file" accept=".md,text/markdown,text/plain">
-      </div>
-      <div class="academy-file-name" id="academy-file-name">Aucun fichier sélectionné</div>
-      <div class="academy-import-error hidden" id="academy-import-error" role="alert"></div>
-      <div id="academy-import-preview"></div>
-    </section>
-
     <section class="card academy-admin-list">
-      <div class="academy-admin-card-heading"><div><h3>2. Brouillons et cours publiés</h3><p class="muted">Seuls les cours publiés sont visibles dans le catalogue public.</p></div><span class="academy-admin-count">${courses.length} cours</span></div>
+      <div class="academy-admin-card-heading">
+        <div><h3>Catalogue des cours</h3><p class="muted">Les cours non générés restent « Bientôt disponible » dans le catalogue public.</p></div>
+        <input class="academy-search" id="academy-course-search" type="search" placeholder="Rechercher un cours…" aria-label="Rechercher un cours">
+      </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>Cours</th><th>Parcours</th><th>Statut</th><th>Vérifié par / modifié</th><th>Actions</th></tr></thead>
-          <tbody id="academy-course-rows">${rowsMarkup(courses)}</tbody>
+          <thead><tr><th>Cours</th><th>Parcours</th><th>État</th><th>Vérifié par / modifié</th><th>Action</th></tr></thead>
+          <tbody id="academy-course-rows">${renderRows(courses)}</tbody>
         </table>
       </div>
-      <div id="academy-review-panel"></div>
+    </section>`;
+
+  const search = content.querySelector('#academy-course-search');
+  search.addEventListener('input', () => {
+    const query = search.value.trim().toLocaleLowerCase('fr');
+    const filtered = courses.filter((course) =>
+      `${course.code} ${course.title} ${course.path} ${course.domain} ${statusLabel(course.status)}`
+        .toLocaleLowerCase('fr')
+        .includes(query));
+    content.querySelector('#academy-course-rows').innerHTML = renderRows(filtered);
+    bindCourseButtons(content);
+  });
+  bindCourseButtons(content);
+}
+
+function bindCourseButtons(content) {
+  content.querySelectorAll('[data-open-course]').forEach((button) => {
+    button.addEventListener('click', () => {
+      window.location.hash = `academy?course=${encodeURIComponent(button.dataset.openCourse)}`;
+    });
+  });
+}
+
+function courseEditor(course) {
+  const isEmpty = course.status === 'EMPTY';
+  const isDraft = course.status === 'DRAFT';
+  const objectives = Array.isArray(course.objectives) ? course.objectives : [];
+  return `
+    <section class="academy-admin-intro">
+      <div>
+        <p class="academy-admin-eyebrow">${esc(course.code)} · ${esc(course.path)} · ${esc(course.domain)}</p>
+        <h2>${esc(course.title)}</h2>
+        <p><span class="academy-admin-status ${statusClass(course.status)}">${statusLabel(course.status)}</span>
+          ${course.version ? ` · Version ${course.version}` : ''}${course.updatedAt ? ` · Modifié le ${formatDate(course.updatedAt)}` : ''}</p>
+      </div>
+      <button class="btn-admin btn-admin-ghost" id="academy-back" type="button">← Retour à la liste</button>
     </section>
-  `;
+    <section class="card academy-generator">
+      <div class="academy-admin-card-heading">
+        <div><h3>${isEmpty ? 'Générer le cours' : isDraft ? 'Modifier et vérifier le brouillon' : 'Cours publié'}</h3>
+          <p class="muted">${isEmpty
+            ? 'Les métadonnées du catalogue sont préremplies. Ajoutez éventuellement des consignes, puis générez le brouillon.'
+            : isDraft
+              ? 'Relisez et modifiez le Markdown complet avant de publier.'
+              : 'Ce cours est publié et visible dans le catalogue.'}</p>
+        </div>
+      </div>
+      ${isEmpty ? `
+        <div class="academy-generator-fields">
+          <label class="academy-field">Titre du cours
+            <input id="academy-title" type="text" maxlength="160" required value="${esc(course.title)}">
+          </label>
+          <label class="academy-field">Niveau
+            <select id="academy-level">${LEVELS.map((level) => `<option value="${esc(level)}" ${level === course.level ? 'selected' : ''}>${esc(level)}</option>`).join('')}</select>
+          </label>
+        </div>
+        <label class="academy-field">Consignes complémentaires <span class="muted">(facultatif, 2 000 caractères maximum)</span>
+          <textarea id="academy-instructions" maxlength="2000" rows="5" placeholder="Ex. Insister sur les risques de levier et donner un exercice de calcul sans conseil d’investissement."></textarea>
+        </label>
+        <div class="academy-editor-actions">
+          <button class="btn-admin btn-admin-ghost" id="academy-save-empty" type="button">Enregistrer les informations</button>
+          <button class="btn-admin btn-admin-primary" id="academy-generate" type="button">Générer avec Gemini</button>
+          <button class="btn-admin btn-admin-danger" id="academy-reset-empty" type="button" ${course.id ? '' : 'disabled title="Aucune personnalisation enregistrée à réinitialiser"'}>Réinitialiser</button>
+        </div>
+      ` : isDraft ? `
+        <div class="academy-course-meta">
+          <strong>${esc(course.code)} · ${esc(course.title)}</strong>
+          <span>${esc(course.level)} · ${esc(course.path)} · ${esc(course.domain)}</span>
+          ${course.summary ? `<p>${esc(course.summary)}</p>` : ''}
+          ${objectives.length ? `<ul>${objectives.map((objective) => `<li>${esc(objective)}</li>`).join('')}</ul>` : ''}
+        </div>
+        <label class="academy-field">Contenu complet du cours (Markdown, quiz et corrigés inclus)
+          <textarea id="academy-markdown" class="academy-markdown-editor" rows="28" spellcheck="false">${esc(course.sourceMarkdown)}</textarea>
+        </label>
+        <label class="academy-verify-check">
+          <input id="academy-verify-check" type="checkbox">
+          <span>J’ai relu le cours et vérifié le contenu, les réponses, les risques et l’absence de promesse de gains ou de conseil d’investissement.</span>
+        </label>
+        <div class="academy-editor-actions">
+          <button class="btn-admin btn-admin-ghost" id="academy-save-draft" type="button">Enregistrer les modifications</button>
+          <button class="btn-admin btn-admin-primary" id="academy-publish" type="button" disabled>Publier le cours</button>
+          <button class="btn-admin btn-admin-danger" id="academy-delete-draft" type="button">Supprimer le brouillon</button>
+        </div>
+      ` : `
+        <div class="academy-course-meta">
+          <strong>${esc(course.code)} · ${esc(course.title)}</strong>
+          <span>${esc(course.level)} · ${esc(course.path)} · ${esc(course.domain)}</span>
+          ${course.summary ? `<p>${esc(course.summary)}</p>` : ''}
+          ${objectives.length ? `<ul>${objectives.map((objective) => `<li>${esc(objective)}</li>`).join('')}</ul>` : ''}
+        </div>
+        <label class="academy-field">Contenu publié (lecture seule)
+          <textarea class="academy-markdown-editor" rows="28" readonly spellcheck="false">${esc(course.sourceMarkdown)}</textarea>
+        </label>
+        <p class="muted">Publié le ${formatDate(course.publishedAt)}${course.verifiedBy?.name ? ` · Vérifié par ${esc(course.verifiedBy.name)}` : ''}</p>
+      `}
+      <div class="academy-import-error hidden" id="academy-course-error" role="alert"></div>
+      <p class="academy-generation-progress hidden" id="academy-generation-progress" role="status">Gemini prépare et valide le cours. Cette opération peut prendre jusqu’à une minute…</p>
+    </section>`;
+}
 
-  const fileInput = content.querySelector('#academy-file');
-  const fileName = content.querySelector('#academy-file-name');
-  const errorBox = content.querySelector('#academy-import-error');
-  const preview = content.querySelector('#academy-import-preview');
+async function renderCourse(content, code) {
+  const { course } = await api('GET', `/api/admin/academy?code=${encodeURIComponent(code)}`);
+  content.innerHTML = courseEditor(course);
+  content.querySelector('#academy-back').addEventListener('click', () => {
+    window.location.hash = 'academy';
+  });
 
-  const showError = (message) => {
-    errorBox.textContent = message;
+  const errorBox = content.querySelector('#academy-course-error');
+  const showError = (error) => {
+    errorBox.textContent = error.details?.length ? error.details.join('\n') : error.message;
     errorBox.classList.remove('hidden');
   };
-  const clearValidation = () => {
-    validated = false;
-    validationSummary = null;
-    preview.innerHTML = '';
-    errorBox.textContent = '';
+  const report = async (button, action) => {
+    button.disabled = true;
     errorBox.classList.add('hidden');
+    try {
+      await action();
+    } catch (error) {
+      showError(error);
+      button.disabled = false;
+    }
   };
 
-  fileInput.addEventListener('change', async () => {
-    clearValidation();
-    const file = fileInput.files?.[0];
-    if (!file) {
-      markdown = '';
-      fileName.textContent = 'Aucun fichier sélectionné';
-      return;
-    }
-    if (!file.name.toLowerCase().endsWith('.md')) {
-      markdown = '';
-      fileInput.value = '';
-      fileName.textContent = 'Aucun fichier sélectionné';
-      showError('Sélectionnez un fichier avec l’extension .md.');
-      return;
-    }
-    if (file.size > 512 * 1024) {
-      markdown = '';
-      fileInput.value = '';
-      fileName.textContent = 'Aucun fichier sélectionné';
-      showError('Le fichier dépasse la limite de 512 Ko.');
-      return;
-    }
-    try {
-      markdown = await file.text();
-    } catch (error) {
-      markdown = '';
-      fileName.textContent = 'Aucun fichier sélectionné';
-      showError(`Impossible de lire le fichier : ${error.message}`);
-      return;
-    }
-    fileName.textContent = `${file.name} · ${(file.size / 1024).toFixed(1)} Ko`;
-    const validateButton = document.createElement('button');
-    validateButton.type = 'button';
-    validateButton.className = 'btn-admin btn-admin-primary academy-validate-button';
-    validateButton.textContent = 'Valider le contenu';
-    preview.appendChild(validateButton);
-    validateButton.addEventListener('click', async () => {
-      const sourceSnapshot = markdown;
-      validateButton.disabled = true;
-      try {
-        const result = await api('POST', '/api/admin/academy', { action: 'validate', markdown: sourceSnapshot });
-        if (markdown !== sourceSnapshot) {
-          showError('Le fichier a changé pendant la validation. Validez de nouveau la version sélectionnée.');
-          return;
-        }
-        validated = true;
-        validationSummary = result.course;
-        preview.innerHTML = validationMarkup(validationSummary);
-        bindValidatedActions(sourceSnapshot);
-      } catch (error) {
-        showError(error.details?.length ? error.details.join('\n') : error.message);
-      } finally {
-        validateButton.disabled = false;
-      }
+  if (course.status === 'EMPTY') {
+    const title = content.querySelector('#academy-title');
+    const level = content.querySelector('#academy-level');
+    const instructions = content.querySelector('#academy-instructions');
+    content.querySelector('#academy-save-empty').addEventListener('click', (event) => {
+      report(event.currentTarget, async () => {
+        await api('POST', '/api/admin/academy', { action: 'edit-empty', code, title: title.value, level: level.value });
+        toast('Informations du cours enregistrées.');
+        await renderCourse(content, code);
+      });
     });
-  });
-
-  function bindValidatedActions(sourceSnapshot) {
-    const checkbox = preview.querySelector('#academy-verify-check');
-    const publishButton = preview.querySelector('#academy-publish-now');
-    const saveButton = preview.querySelector('#academy-save-draft');
-    checkbox.addEventListener('change', () => { publishButton.disabled = !checkbox.checked; });
-
-    saveButton.addEventListener('click', async () => {
-      if (!validated || !sourceSnapshot || markdown !== sourceSnapshot) return;
-      saveButton.disabled = true;
-      try {
-        await api('POST', '/api/admin/academy', { action: 'draft', markdown: sourceSnapshot });
-        toast('Brouillon enregistré.');
-        await render(content);
-      } catch (error) {
-        showError(error.message);
-        saveButton.disabled = false;
-      }
+    content.querySelector('#academy-generate').addEventListener('click', (event) => {
+      const button = event.currentTarget;
+      const progress = content.querySelector('#academy-generation-progress');
+      report(button, async () => {
+        progress.classList.remove('hidden');
+        const result = await api('POST', '/api/admin/academy', {
+          action: 'generate',
+          code,
+          title: title.value,
+          level: level.value,
+          instructions: instructions.value,
+        });
+        toast('Cours généré et enregistré comme brouillon.');
+        await renderCourse(content, result.course.code);
+      }).finally(() => progress.classList.add('hidden'));
     });
-
-    publishButton.addEventListener('click', async () => {
-      if (!validated || !checkbox.checked || markdown !== sourceSnapshot) return;
-      publishButton.disabled = true;
-      try {
-        const result = await api('POST', '/api/admin/academy', { action: 'draft', markdown: sourceSnapshot });
-        await api('POST', '/api/admin/academy', { action: 'publish', id: result.course.id, verified: true });
-        toast('Cours publié et vérifié. Il est maintenant disponible dans le catalogue.');
-        await render(content);
-      } catch (error) {
-        showError(error.message);
-        publishButton.disabled = false;
-      }
+    content.querySelector('#academy-reset-empty').addEventListener('click', (event) => {
+      if (!window.confirm('Réinitialiser ce cours ? Ses informations personnalisées seront supprimées et il réapparaîtra comme « Bientôt disponible ».')) return;
+      report(event.currentTarget, async () => {
+        await api('POST', '/api/admin/academy', { action: 'reset-empty', code });
+        toast('Cours réinitialisé.');
+        await renderCourse(content, code);
+      });
+    });
+  } else if (course.status === 'DRAFT') {
+    const markdown = content.querySelector('#academy-markdown');
+    const confirmation = content.querySelector('#academy-verify-check');
+    const publish = content.querySelector('#academy-publish');
+    confirmation.addEventListener('change', () => { publish.disabled = !confirmation.checked; });
+    content.querySelector('#academy-save-draft').addEventListener('click', (event) => {
+      report(event.currentTarget, async () => {
+        await api('POST', '/api/admin/academy', { action: 'edit-draft', id: course.id, markdown: markdown.value });
+        toast('Modifications enregistrées dans le brouillon.');
+        await renderCourse(content, code);
+      });
+    });
+    publish.addEventListener('click', (event) => {
+      if (!confirmation.checked || !window.confirm('Confirmez-vous avoir relu et vérifié tout le cours avant sa publication ?')) return;
+      report(event.currentTarget, async () => {
+        await api('POST', '/api/admin/academy', { action: 'edit-draft', id: course.id, markdown: markdown.value });
+        await api('POST', '/api/admin/academy', { action: 'publish', id: course.id, verified: true });
+        toast('Cours publié et vérifié.');
+        await renderCourse(content, code);
+      });
+    });
+    content.querySelector('#academy-delete-draft').addEventListener('click', (event) => {
+      if (!window.confirm('Supprimer ce brouillon ? Le cours reviendra à l’état « Bientôt disponible ».')) return;
+      report(event.currentTarget, async () => {
+        await api('POST', '/api/admin/academy', { action: 'delete-draft', id: course.id });
+        toast('Brouillon supprimé.');
+        await renderCourse(content, code);
+      });
     });
   }
+}
 
-  content.querySelectorAll('[data-publish]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      if (!window.confirm('Confirmez-vous avoir relu et vérifié l’intégralité de ce cours ? Sa publication le rendra visible aux apprenants.')) return;
-      button.disabled = true;
-      try {
-        await api('POST', '/api/admin/academy', { action: 'publish', id: Number(button.dataset.publish), verified: true });
-        toast('Cours publié et vérifié.');
-        await render(content);
-      } catch (error) {
-        toast(error.message, 'error');
-        button.disabled = false;
-      }
-    });
-  });
-
-  content.querySelectorAll('[data-review]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      button.disabled = true;
-      try {
-        const { course } = await api('GET', `/api/admin/academy?id=${Number(button.dataset.review)}`);
-        const panel = content.querySelector('#academy-review-panel');
-        panel.innerHTML = `
-          <section class="academy-review">
-            <div class="academy-review-heading"><div><h3>Relecture : ${esc(course.code)} · ${esc(course.title)}</h3><p class="muted">Version ${course.version} · le Markdown source complet, quiz et réponses inclus.</p></div><button class="btn-admin btn-admin-ghost" type="button" data-close-review>Fermer</button></div>
-            <pre>${esc(course.sourceMarkdown)}</pre>
-          </section>`;
-        panel.querySelector('[data-close-review]').addEventListener('click', () => { panel.innerHTML = ''; });
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch (error) {
-        toast(error.message, 'error');
-      } finally {
-        button.disabled = false;
-      }
-    });
-  });
-
-  content.querySelectorAll('[data-delete]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      if (!window.confirm('Supprimer ce brouillon ? Cette action est irréversible.')) return;
-      button.disabled = true;
-      try {
-        await api('POST', '/api/admin/academy', { action: 'delete-draft', id: Number(button.dataset.delete) });
-        toast('Brouillon supprimé.');
-        await render(content);
-      } catch (error) {
-        toast(error.message, 'error');
-        button.disabled = false;
-      }
-    });
-  });
+export async function render(content) {
+  const query = window.location.hash.split('?')[1] || '';
+  const code = new URLSearchParams(query).get('course');
+  if (code) {
+    await renderCourse(content, code);
+    return;
+  }
+  const { courses } = await api('GET', '/api/admin/academy');
+  renderList(content, courses);
 }
