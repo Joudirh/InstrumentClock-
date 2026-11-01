@@ -1,4 +1,5 @@
 import { ACADEMY_CATALOG } from '../lib/academy-catalog.js';
+import { renderAcademyMarkdown } from './academy-markdown.js';
 
 const paths = [
   { code: 'A1', domain: 'A', title: 'Démarrer en trading', category: 'all' },
@@ -353,22 +354,6 @@ export const setupAcademy = (root, navigate) => {
     `;
   };
 
-  const inlineMarkdown = (value) => escapeHtml(value)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-  const lessonMarkup = (body) => {
-    const paragraphs = body.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
-    return paragraphs.map((paragraph) => {
-      const lines = paragraph.split('\n');
-      if (lines.every((line) => /^-\s+/.test(line))) {
-        return `<ul>${lines.map((line) => `<li>${inlineMarkdown(line.replace(/^-\s+/, ''))}</li>`).join('')}</ul>`;
-      }
-      return `<p>${lines.map(inlineMarkdown).join('<br>')}</p>`;
-    }).join('');
-  };
-
   const renderCoursePage = async (slug, token) => {
     try {
       const response = await fetch(`/api/academy?slug=${encodeURIComponent(slug)}`, { credentials: 'same-origin' });
@@ -394,7 +379,7 @@ export const setupAcademy = (root, navigate) => {
               ${module.lessons.map((lesson) => `
                 <article class="academy-lesson">
                   <div class="academy-lesson-heading"><h3>${escapeHtml(lesson.title)}</h3><span>${lesson.minutes} min</span></div>
-                  <div class="academy-lesson-body">${lessonMarkup(lesson.body)}</div>
+                  <div class="academy-lesson-body">${renderAcademyMarkdown(lesson.body)}</div>
                 </article>`).join('')}
             </section>`).join('')}
         </div>

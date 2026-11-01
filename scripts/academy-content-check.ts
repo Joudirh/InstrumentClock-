@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { parseAcademyMarkdown } from "../lib/academy-import.js";
 import { ACADEMY_CATALOG, academyCatalogEntry } from "../lib/academy-catalog.js";
 import { generateAcademyPart } from "../lib/academy-generation.js";
+import { renderAcademyMarkdown } from "../js/academy-markdown.js";
 
 assert.equal(ACADEMY_CATALOG.length, 71);
 assert.equal(new Set(ACADEMY_CATALOG.map((course) => course.code)).size, ACADEMY_CATALOG.length);
@@ -32,6 +33,12 @@ ${Array.from({ length: 4 }, (_, moduleIndex) => `## Module ${moduleIndex + 1} �
 ${Array.from({ length: 3 }, (_, lessonIndex) => `### Leçon ${lessonIndex + 1} — Leçon de test ${lessonIndex + 1} (8 min)
 
 Cette leçon explique une notion de marché avec un exemple détaillé, indique ses limites et rappelle qu’il s’agit d’un contenu pédagogique.
+
+### Comparaison pédagogique
+
+| Notion | Exemple |
+| --- | --- |
+| Risque | Volatilité |
 `).join("\n")}
 ### Quiz du module
 
@@ -49,6 +56,8 @@ if (valid.ok) {
   assert.equal(valid.course.modules.reduce((sum, module) => sum + module.lessons.length, 0), 12);
   assert.equal(valid.course.exam.length, 30);
   assert.equal(valid.course.estimatedMinutes, 96);
+  assert.match(valid.course.modules[0].lessons[0].body, /### Comparaison pédagogique/);
+  assert.match(valid.course.modules[0].lessons[0].body, /\| Notion \| Exemple \|/);
 }
 
 const tooFewExamQuestions = parseAcademyMarkdown(markdown.replace(question(30), ""));
@@ -62,6 +71,29 @@ assert.match(twoCorrectAnswers.ok ? "" : twoCorrectAnswers.errors.join(" "), /ex
 const oversized = parseAcademyMarkdown("x".repeat(512 * 1024 + 1));
 assert.equal(oversized.ok, false);
 assert.match(oversized.ok ? "" : oversized.errors.join(" "), /512 Ko/);
+
+const renderedLesson = renderAcademyMarkdown(`### Tableau comparatif : risque, rendement et liquidité
+
+**Le risque** décrit la possibilité de perte. *Exemple :* un marché volatil peut varier rapidement.
+
+| Classe d'actif | Risque | Liquidité |
+| :--- | :---: | ---: |
+| Actions | Modéré | Élevée |
+| Immobilier | Modéré | Faible |
+
+- Première caractéristique
+- **Deuxième caractéristique**
+
+<img src=x onerror=alert(1)>`);
+assert.match(renderedLesson, /<h4>Tableau comparatif/);
+assert.match(renderedLesson, /<table>/);
+assert.match(renderedLesson, /<th class="is-align-center">Risque<\/th>/);
+assert.match(renderedLesson, /<td class="is-align-right">Élevée<\/td>/);
+assert.match(renderedLesson, /<strong>Le risque<\/strong>/);
+assert.match(renderedLesson, /<em>Exemple :<\/em>/);
+assert.match(renderedLesson, /<ul><li>Première caractéristique<\/li>/);
+assert.ok(!renderedLesson.includes("<img"));
+assert.ok(renderedLesson.includes("&lt;img"));
 
 const previousFetch = globalThis.fetch;
 const previousApiKey = process.env.GEMINI_API_KEY;

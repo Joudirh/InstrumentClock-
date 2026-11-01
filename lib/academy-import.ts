@@ -194,7 +194,7 @@ export function parseAcademyMarkdown(markdown: unknown): AcademyImportResult {
       continue;
     }
 
-    if (mode === "lesson" && currentLesson && line.trim() && !line.startsWith("#")) {
+    if (mode === "lesson" && currentLesson && line.trim() && (!line.startsWith("#") || /^#{1,6}\s+/.test(line))) {
       currentLesson.body += `${line.trim()}\n`;
     }
   }

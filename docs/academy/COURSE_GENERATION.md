@@ -36,4 +36,6 @@ La validation serveur impose les métadonnées et volumes suivants :
 
 Les réponses et explications des quiz restent privées côté serveur. Les cours doivent rester éducatifs, mentionner les risques et ne pas promettre de gains ni recommander un investissement.
 
+Dans les leçons, les titres Markdown, le gras, l’italique, les listes, les citations et les tableaux sont rendus avec une mise en forme adaptée aux thèmes sombre et clair. Le HTML fourni dans le contenu est affiché comme du texte et n’est pas exécuté.
+
 Vérification locale du parseur : `npm run academy:check-content`.
