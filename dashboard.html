@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tableau de bord — Trading Sessions Hub</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/i18n.css">
+  <link rel="stylesheet" href="/css/admin.css">
 </head>
-<body>
-  <main id="dashboard-loading" class="max-w" role="status" style="padding: 2rem 0">
-    Chargement de votre espace…
+<body class="admin-body">
+  <main id="dashboard-loading" class="dashboard-loading card max-w" role="status" aria-live="polite">
+    <span class="dashboard-loading-indicator" aria-hidden="true"></span>
+    <span>Ouverture de votre espace…</span>
   </main>
   <script type="module" src="/js/dashboard-router.js"></script>
 </body>

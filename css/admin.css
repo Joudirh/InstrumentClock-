@@ -568,6 +568,29 @@
   color: var(--text-main);
 }
 
+.dashboard-loading {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 3rem auto;
+  color: var(--text-muted);
+}
+
+.dashboard-loading-indicator {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: dashboard-loading-spin 0.8s linear infinite;
+}
+
+@keyframes dashboard-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
 .admin-shell {
   display: flex;
   min-height: 100vh;
