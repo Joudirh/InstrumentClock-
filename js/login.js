@@ -177,7 +177,7 @@ export const setupLogin = (...buttons) => {
   const handleLoginClick = async () => {
     if (connected) {
       if (userRole === 'ADMIN') {
-        window.location.href = '/admin/dashboard';
+        window.location.href = '/dashboard';
         return;
       }
       try {

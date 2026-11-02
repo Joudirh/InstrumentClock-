@@ -94,8 +94,8 @@ function cleanUrlsMiddleware() {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (req.url === "/admin") req.url = "/admin.html";
-        else if (req.url === "/admin/dashboard") req.url = "/dashboard.html";
-        else if (req.url === "/dashboard" || req.url === "/account") req.url = "/account.html";
+        else if (req.url === "/dashboard") req.url = "/dashboard.html";
+        else if (req.url === "/account") req.url = "/account.html";
         next();
       });
     },
@@ -110,6 +110,7 @@ export default defineConfig({
         main: resolve(__dirname, "index.html"),
         admin: resolve(__dirname, "admin.html"),
         dashboard: resolve(__dirname, "dashboard.html"),
+        adminDashboard: resolve(__dirname, "admin-dashboard.html"),
         account: resolve(__dirname, "account.html"),
       },
     },

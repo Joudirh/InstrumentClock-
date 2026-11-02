@@ -55,7 +55,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 async function boot() {
-  // Garde d'authentification : /admin/dashboard exige une session ADMIN valide.
+  // Garde d'authentification : /dashboard exige une session ADMIN valide.
   let user = null;
   try {
     ({ user } = await api('GET', '/api/auth/session'));

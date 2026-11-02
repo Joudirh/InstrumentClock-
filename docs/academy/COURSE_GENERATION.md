@@ -1,6 +1,6 @@
 # Génération et publication des cours
 
-L’administration du catalogue se trouve dans **`/admin/dashboard#/academy`**. La liste regroupe les cours connus et leur état :
+L’administration du catalogue se trouve dans **`/dashboard#/academy`**. La liste regroupe les cours connus et leur état :
 
 - **Bientôt disponible** : aucun cours enregistré. Ouvrez la fiche pour ajuster le titre et le niveau, puis générer un brouillon.
 - **Brouillon** : le contenu généré est modifiable et doit être relu avant publication.

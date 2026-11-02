@@ -11,7 +11,7 @@ revealBtn.addEventListener('click', () => {
 // Déjà connecté → dashboard directement.
 fetch('/api/auth/session', { credentials: 'same-origin' })
   .then((res) => {
-    if (res.ok) window.location.href = '/admin/dashboard';
+    if (res.ok) window.location.href = '/dashboard';
   })
   .catch(() => {});
 
@@ -37,7 +37,7 @@ form.addEventListener('submit', async (event) => {
       errorBox.classList.remove('hidden');
       return;
     }
-    window.location.href = '/admin/dashboard';
+    window.location.href = '/dashboard';
   } catch {
     errorBox.textContent = 'Erreur réseau : réessayez';
     errorBox.classList.remove('hidden');
