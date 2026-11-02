@@ -42,10 +42,80 @@ const isListItem = (line) => /^\s*(?:[-+*]|\d+[.)])\s+/.test(line);
 const isBlockStart = (lines, index) => {
   const line = lines[index];
   return /^#{1,6}\s+/.test(line)
+    || /^```/.test(line)
     || /^([-*_])(?:\s*\1){2,}\s*$/.test(line.trim())
     || /^\s*>/.test(line)
     || isListItem(line)
     || (line.includes('|') && isTableSeparator(lines[index + 1] ?? ''));
+};
+
+const parseMermaidGraph = (source) => {
+  const lines = source.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (!/^graph\s+(?:TD|TB|LR|RL|BT)\b/i.test(lines[0] ?? '')) return null;
+
+  const nodes = new Map();
+  const edges = [];
+  for (const line of lines.slice(1)) {
+    const edgePattern = /([A-Za-z_][\w-]*)(?:\s*(?:\[[^\]]*\]|\{[^}]*\}|\([^)]*\)))?\s*-->\s*(?:\|[^|]*\|\s*)?([A-Za-z_][\w-]*)/g;
+    for (const match of line.matchAll(edgePattern)) {
+      edges.push([match[1], match[2]]);
+    }
+
+    const declarationPattern = /([A-Za-z_][\w-]*)\s*(?:\[([^\]]*)\]|\{([^}]*)\}|\(([^)]*)\))/g;
+    for (const match of line.matchAll(declarationPattern)) {
+      nodes.set(match[1], (match[2] ?? match[3] ?? match[4]).trim());
+    }
+  }
+  for (const [from, to] of edges) {
+    if (!nodes.has(from)) nodes.set(from, from);
+    if (!nodes.has(to)) nodes.set(to, to);
+  }
+  if (!edges.length) return null;
+
+  const incoming = new Set(edges.map(([, to]) => to));
+  const roots = [...nodes.keys()].filter((id) => !incoming.has(id));
+  if (roots.length !== 1) return null;
+
+  const children = new Map();
+  for (const [from, to] of edges) {
+    const nodeChildren = children.get(from) || [];
+    if (!nodeChildren.includes(to)) nodeChildren.push(to);
+    children.set(from, nodeChildren);
+  }
+  return { nodes, children, root: roots[0] };
+};
+
+const renderMermaidInfographic = (source, caption) => {
+  const graph = parseMermaidGraph(source);
+  if (!graph) {
+    return `<pre class="academy-code-block"><code>${escapeHtml(source)}</code></pre>`;
+  }
+
+  const { nodes, children, root } = graph;
+  const renderChildren = (id, ancestors = new Set()) => {
+    const descendants = children.get(id) || [];
+    if (!descendants.length) return '';
+    const nextAncestors = new Set(ancestors).add(id);
+    return `<ul>${descendants
+      .map((child) => {
+        const label = escapeHtml(nodes.get(child) ?? child);
+        const nested = nextAncestors.has(child) ? '' : renderChildren(child, nextAncestors);
+        return `<li><span>${label}</span>${nested}</li>`;
+      })
+      .join('')}</ul>`;
+  };
+  const branches = (children.get(root) || []).map((id, index) => `
+    <section class="academy-infographic-branch">
+      <h3><span class="academy-infographic-index">${String(index + 1).padStart(2, '0')}</span>${escapeHtml(nodes.get(id) ?? id)}</h3>
+      ${renderChildren(id, new Set([root]))}
+    </section>
+  `).join('');
+
+  return `<figure class="academy-infographic">
+    ${caption ? `<figcaption>${caption}</figcaption>` : ''}
+    <div class="academy-infographic-root">${escapeHtml(nodes.get(root) ?? root)}</div>
+    <div class="academy-infographic-branches">${branches}</div>
+  </figure>`;
 };
 
 export function renderAcademyMarkdown(markdown) {
@@ -71,6 +141,27 @@ export function renderAcademyMarkdown(markdown) {
     if (/^([-*_])(?:\s*\1){2,}\s*$/.test(line)) {
       blocks.push('<hr>');
       index += 1;
+      continue;
+    }
+
+    if (/^```/.test(line)) {
+      const language = line.slice(3).trim().toLowerCase();
+      const codeLines = [];
+      index += 1;
+      while (index < lines.length && !/^```\s*$/.test(lines[index].trim())) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) index += 1;
+
+      if (language === 'mermaid') {
+        const previousBlock = blocks.at(-1);
+        const title = previousBlock?.match(/^<p><strong>(.+)<\/strong><\/p>$/);
+        if (title) blocks.pop();
+        blocks.push(renderMermaidInfographic(codeLines.join('\n'), title?.[1] ?? ''));
+      } else {
+        blocks.push(`<pre class="academy-code-block"><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+      }
       continue;
     }
 

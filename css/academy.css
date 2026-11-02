@@ -1054,6 +1054,106 @@
   color: var(--academy-accent);
 }
 
+.academy-infographic {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--academy-line);
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 50% 0, rgba(101, 224, 176, 0.08), transparent 65%),
+    var(--academy-panel);
+}
+
+.academy-infographic figcaption {
+  margin-bottom: 0.85rem;
+  color: var(--academy-ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.academy-infographic-root {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 1.15rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(101, 224, 176, 0.38);
+  border-radius: 10px;
+  background: rgba(101, 224, 176, 0.1);
+  color: var(--academy-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.academy-infographic-branches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.academy-infographic-branch {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--academy-line);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.academy-infographic-branch h3 {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0 0 0.55rem;
+  color: var(--academy-ink);
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+
+.academy-infographic-index {
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(101, 224, 176, 0.12);
+  color: var(--academy-accent);
+  font-size: 0.55rem;
+}
+
+.academy-lesson-body .academy-infographic-branch ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.academy-lesson-body .academy-infographic-branch li {
+  margin: 0;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--academy-line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--academy-muted);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.academy-code-block {
+  max-width: 100%;
+  margin: 0.75rem 0;
+  padding: 0.8rem;
+  overflow-x: auto;
+  border: 1px solid var(--academy-line);
+  border-radius: 9px;
+  background: var(--academy-panel);
+  color: var(--academy-muted);
+  font-size: 0.68rem;
+  line-height: 1.55;
+  white-space: pre;
+}
+
 .academy-lesson-body blockquote {
   margin: 0.7rem 0;
   padding: 0.55rem 0.8rem;
@@ -1203,6 +1303,10 @@
     gap: 1rem;
   }
 
+  .academy-infographic-branches {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .academy-category-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -1224,6 +1328,14 @@
 
   .academy-layout {
     display: block;
+  }
+
+  .academy-infographic {
+    padding: 0.75rem;
+  }
+
+  .academy-infographic-branches {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .academy-sidebar {
