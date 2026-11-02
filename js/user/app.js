@@ -70,7 +70,7 @@ async function renderList(containerId, items, renderItem) {
 const user = await requireUser();
 if (!user) throw new Error('stop');
 
-const { byId, bySlug } = loadInstruments();
+const { byId, bySlug } = await loadInstruments();
 
 // --- Profil ---
 const profileRes = await api('/api/me/profile');
