@@ -159,7 +159,7 @@ const instDetailsHtml = (inst, category, targetTz, seasonKey) => {
   `;
 };
 
-export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false, sortOptimal = false, requestedPage = 1, favoriteIds = new Set(), marketInstrumentIds = null) => {
+export const renderInstruments = (containerEl, instrumentCategories, targetTz, seasonKey, selectedCategory, selectedStatus, searchQuery = '', optimalOnly = false, sortOptimal = false, requestedPage = 1, favoriteIds = new Set(), marketInstrumentIds = null, favoritesOnly = false) => {
   containerEl.innerHTML = '';
 
   const normalizedQuery = normalizeText(searchQuery).trim();
@@ -176,6 +176,7 @@ export const renderInstruments = (containerEl, instrumentCategories, targetTz, s
     // Collecte filtrée avant rendu (le tri éventuel réordonne la file entière).
     const displayQueue = [];
     category.items.forEach(inst => {
+      if (favoritesOnly && !favoriteIds.has(inst.id)) return;
       if (marketInstrumentIds && !marketInstrumentIds.has(String(inst.id))) return;
       const isOpen = isInstrumentOpen(inst);
       if (selectedStatus === 'open' && !isOpen) return;

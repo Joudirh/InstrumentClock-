@@ -24,6 +24,7 @@ const AppState = {
   marketInstrumentIds: null,
   optimalOnly: false, // show only instruments currently in their optimal window
   sortOptimal: false, // tri par plage optimale la plus proche de maintenant
+  favoritesOnly: false,
   instrumentsPage: 1
 };
 
@@ -57,6 +58,7 @@ const updateMarketBell = setupMarketBell(() => AppData, ({ categoryId, instrumen
   statusSelector.value = 'all';
   AppState.optimalOnly = false;
   optimalToggle.checked = false;
+  AppState.favoritesOnly = false;
   categoryTabs.value = categoryId;
   renderAll(true);
 });
@@ -74,7 +76,24 @@ const favoritesController = setupFavorites({
     }
     return null;
   },
+  isFavoritesOnly: () => AppState.favoritesOnly,
+  onSelectFavorites: () => {
+    AppState.favoritesOnly = !AppState.favoritesOnly;
+    if (AppState.favoritesOnly) {
+      AppState.category = 'all';
+      AppState.marketInstrumentIds = null;
+      AppState.search = '';
+      instrumentSearch.value = '';
+      AppState.status = 'all';
+      statusSelector.value = 'all';
+      AppState.optimalOnly = false;
+      optimalToggle.checked = false;
+    }
+    renderAll(true);
+    instrumentsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
   onChange: () => {
+    if (!favoritesController.getInstrumentIds().size) AppState.favoritesOnly = false;
     if (appReady) renderAll();
   }
 });
@@ -314,7 +333,7 @@ const renderAll = (resetInstrumentsPage = false) => {
   renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  const pagination = renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal, AppState.instrumentsPage, favoritesController.getInstrumentIds(), AppState.marketInstrumentIds);
+  const pagination = renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal, AppState.instrumentsPage, favoritesController.getInstrumentIds(), AppState.marketInstrumentIds, AppState.favoritesOnly);
   AppState.instrumentsPage = pagination.currentPage;
   renderInstrumentPagination(instrumentsPagination, pagination.currentPage, pagination.totalPages);
   

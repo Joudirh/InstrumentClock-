@@ -1,4 +1,4 @@
-export const setupFavorites = ({ container, button, badge, panel, wrapper, loginButton, getInstrument, onChange }) => {
+export const setupFavorites = ({ container, button, badge, panel, wrapper, loginButton, getInstrument, isFavoritesOnly, onSelectFavorites, onChange }) => {
   const favorites = new Map();
   let authenticated = null;
   let initialized = false;
@@ -72,6 +72,14 @@ export const setupFavorites = ({ container, button, badge, panel, wrapper, login
       panel.appendChild(empty);
       return;
     }
+
+    const selectFavorites = document.createElement('button');
+    selectFavorites.type = 'button';
+    selectFavorites.className = 'favorites-select';
+    selectFavorites.dataset.selectFavorites = '';
+    selectFavorites.setAttribute('aria-pressed', String(isFavoritesOnly()));
+    selectFavorites.textContent = isFavoritesOnly() ? 'Afficher tous les instruments' : 'Afficher mes favoris';
+    panel.appendChild(selectFavorites);
 
     favorites.forEach((favorite) => {
       const row = document.createElement('div');
@@ -197,6 +205,13 @@ export const setupFavorites = ({ container, button, badge, panel, wrapper, login
     toggleFavorite(control);
   });
   panel.addEventListener('click', async (event) => {
+    const selectFavorites = event.target.closest('[data-select-favorites]');
+    if (selectFavorites) {
+      onSelectFavorites();
+      setPanelOpen(false);
+      return;
+    }
+
     const remove = event.target.closest('[data-favorite-id]');
     if (!remove) return;
     const favoriteId = Number(remove.dataset.favoriteId);
