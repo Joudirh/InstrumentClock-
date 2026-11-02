@@ -112,7 +112,7 @@ export const setupLogin = (...buttons) => {
     }
     close();
     const role = result.user?.role || 'USER';
-    window.location.href = role === 'ADMIN' ? '/admin' : '/dashboard';
+    window.location.href = role === 'ADMIN' ? '/admin-dashboard' : '/account';
     return true;
   };
 
@@ -179,7 +179,7 @@ export const setupLogin = (...buttons) => {
   const handleLoginClick = async () => {
     if (connected) {
       if (userRole === 'ADMIN') {
-        window.location.href = '/dashboard';
+        window.location.href = '/admin-dashboard';
         return;
       }
       try {

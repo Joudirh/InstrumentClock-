@@ -67,7 +67,7 @@ async function boot() {
   document.getElementById('user-email').textContent = user.email;
   document.getElementById('user-avatar').textContent = user.name.slice(0, 1).toUpperCase();
   if (user.role !== 'ADMIN') {
-    window.location.href = '/dashboard';
+    window.location.href = '/account';
     return;
   }
   window.__adminUser = user;
