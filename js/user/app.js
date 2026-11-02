@@ -3,7 +3,7 @@ import {
   instrumentCategories as staticCategories,
 } from '../data.js';
 
-// Garde d'accès : /account est réservé aux utilisateurs (rôle USER).
+// Garde d'accès : /dashboard (alias /account) est réservé aux utilisateurs (rôle USER).
 async function requireUser() {
   let user = null;
   try {

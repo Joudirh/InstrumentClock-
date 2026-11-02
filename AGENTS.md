@@ -7,7 +7,7 @@ Static front-end (Vite, vanilla ES modules, plain CSS) plus TypeScript Vercel fu
 - `npm run dev` (Vite, run from repo root), `npm run build` (front-end only to `dist/`), `npm run preview`.
 - DB: `npm run db:push` / `db:migrate` / `db:deploy`; `npm run db:seed` (`prisma db seed` -> `tsx prisma/seed.ts` per `prisma.config.ts`); `npm run db:studio` (very slow to boot); `npm run assets:upload`.
 - `db:seed` is idempotent upserts: 14 sessions, 7 categories, instruments 72–150 + `instrument_windows`, and admin `admin@instrumentclock.com` / `admin123@` (existing password is never reset). It never wipes.
-- Pages: `/admin` login, `/dashboard` ADMIN-only, `/account` USER-only. `admin.html` / `dashboard.html` / `account.html` are Vite entries; `cleanUrls` + a dev rewrite provide the clean paths. The public navbar login is USER-only; admins must use `/admin`.
+- Pages: `/admin` login, `/admin/dashboard` ADMIN-only, `/dashboard` USER-only (`/account` remains an alias). `admin.html` / `dashboard.html` / `account.html` are Vite entries; `cleanUrls` + rewrites provide the clean paths. The public navbar login is USER-only; admins must use `/admin`.
 - Verification: no test, linter, or typecheck script. `npx tsc --noEmit` is the only typecheck (expect/ignore errors from `lib/generated/`). `npx tsx scripts/market-hours-check.ts` exercises market-hours logic. `npx tsx scripts/verify-auth.ts` needs `npm run dev` running and creates test users/favorites in the configured DB.
 
 ## API / auth

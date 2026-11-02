@@ -11,7 +11,7 @@
 
 L’entrée Formation reste sur l’application existante avec `/#apprendre`; ses sous-pages visuelles utilisent des fragments (`#apprendre/catalogue`, etc.). L’accueil et le catalogue des 71 cours sont disponibles. Les cours ne deviennent accessibles qu’après import Markdown, validation et publication par un administrateur.
 
-L’administration réutilise `/dashboard#/academy`, la garde `requireRole(..., "ADMIN")` et le routeur regroupé `/api/admin/academy`. La migration Prisma `20261101100000_add_academy_courses` stocke les brouillons, les cours publiés, le Markdown source, la structure pédagogique JSON et l’identité de l’administrateur vérificateur. L’API publique `/api/academy` ne divulgue que les métadonnées et le texte des leçons; les quiz, leurs réponses et l’examen restent privés.
+L’administration réutilise `/admin/dashboard#/academy`, la garde `requireRole(..., "ADMIN")` et le routeur regroupé `/api/admin/academy`. La migration Prisma `20261101100000_add_academy_courses` stocke les brouillons, les cours publiés, le Markdown source, la structure pédagogique JSON et l’identité de l’administrateur vérificateur. L’API publique `/api/academy` ne divulgue que les métadonnées et le texte des leçons; les quiz, leurs réponses et l’examen restent privés.
 
 Le workflow de génération Gemini, sa configuration serveur et ses règles de validation sont documentés dans `COURSE_GENERATION.md`. La publication exige une confirmation de relecture et une nouvelle validation. Appliquer les migrations avec `npm run db:deploy` après configuration des variables Neon.
 

@@ -55,7 +55,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 async function boot() {
-  // Garde d'authentification : /dashboard exige une session valide.
+  // Garde d'authentification : /admin/dashboard exige une session ADMIN valide.
   let user = null;
   try {
     ({ user } = await api('GET', '/api/auth/session'));
@@ -67,7 +67,7 @@ async function boot() {
   document.getElementById('user-email').textContent = user.email;
   document.getElementById('user-avatar').textContent = user.name.slice(0, 1).toUpperCase();
   if (user.role !== 'ADMIN') {
-    window.location.href = '/account';
+    window.location.href = '/dashboard';
     return;
   }
   window.__adminUser = user;

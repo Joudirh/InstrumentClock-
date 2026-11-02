@@ -6,6 +6,7 @@ export const setupLogin = (...buttons) => {
 
   const iconButtons = loginButtons.filter((btn) => btn.classList.contains('login-btn-icon'));
   const textButtons = loginButtons.filter((btn) => !btn.classList.contains('login-btn-icon'));
+  const adminDashboardLink = document.getElementById('admin-dashboard-nav-item');
   const modal = document.createElement('div');
   modal.className = 'login-modal hidden';
   modal.setAttribute('role', 'dialog');
@@ -110,7 +111,7 @@ export const setupLogin = (...buttons) => {
     }
     close();
     const role = result.user?.role || 'USER';
-    window.location.href = role === 'ADMIN' ? '/admin' : '/account';
+    window.location.href = role === 'ADMIN' ? '/admin' : '/dashboard';
     return true;
   };
 
@@ -133,6 +134,7 @@ export const setupLogin = (...buttons) => {
   let userRole = 'USER';
 
   const syncButtonLabel = () => {
+    adminDashboardLink?.classList.toggle('hidden', !connected || userRole !== 'ADMIN');
     iconButtons.forEach((btn) => {
       if (connected) {
         btn.innerHTML = `
@@ -174,6 +176,10 @@ export const setupLogin = (...buttons) => {
 
   const handleLoginClick = async () => {
     if (connected) {
+      if (userRole === 'ADMIN') {
+        window.location.href = '/admin/dashboard';
+        return;
+      }
       try {
         await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
       } catch {}

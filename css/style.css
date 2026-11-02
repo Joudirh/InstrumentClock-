@@ -851,6 +851,11 @@ select:focus {
   border-color: var(--color-primary);
 }
 
+.admin-dashboard-link {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .search-filter {
   flex: 1 1 200px;
   min-width: 0;

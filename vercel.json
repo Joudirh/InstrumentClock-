@@ -5,6 +5,9 @@
   "buildCommand": "prisma generate && prisma migrate deploy && vite build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/admin/dashboard", "destination": "/dashboard.html" },
+    { "source": "/dashboard", "destination": "/account.html" },
+    { "source": "/account", "destination": "/account.html" },
     { "source": "/api/auth/:path*", "destination": "/api/auth?__path=:path*" },
     { "source": "/api/me/:path*", "destination": "/api/me?__path=:path*" },
     { "source": "/api/admin/:path*", "destination": "/api/admin?__path=:path*" }
