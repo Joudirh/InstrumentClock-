@@ -7,6 +7,7 @@ export const setupLogin = (...buttons) => {
   const iconButtons = loginButtons.filter((btn) => btn.classList.contains('login-btn-icon'));
   const textButtons = loginButtons.filter((btn) => !btn.classList.contains('login-btn-icon'));
   const adminDashboardLink = document.getElementById('admin-dashboard-nav-item');
+  const userDashboardLink = document.getElementById('user-dashboard-nav-item');
   const modal = document.createElement('div');
   modal.className = 'login-modal hidden';
   modal.setAttribute('role', 'dialog');
@@ -135,6 +136,7 @@ export const setupLogin = (...buttons) => {
 
   const syncButtonLabel = () => {
     adminDashboardLink?.classList.toggle('hidden', !connected || userRole !== 'ADMIN');
+    userDashboardLink?.classList.toggle('hidden', !connected || userRole !== 'USER');
     iconButtons.forEach((btn) => {
       if (connected) {
         btn.innerHTML = `

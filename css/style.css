@@ -851,7 +851,7 @@ select:focus {
   border-color: var(--color-primary);
 }
 
-.admin-dashboard-link {
+.private-dashboard-link {
   color: var(--color-primary);
   font-weight: 600;
 }
