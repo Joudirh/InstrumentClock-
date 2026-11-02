@@ -61,7 +61,7 @@ const activeTradingWindow = (inst, now) => {
  * hovertext dynamique et panneau déroulant groupé par séance (ou catégorie en
  * fallback statique). Le DOM n'est touché que si le compte ou la liste changent.
  */
-export const setupMarketBell = (getData) => {
+export const setupMarketBell = (getData, onMarketSelect) => {
   const bellButton = document.getElementById('market-bell');
   const bellBadge = document.getElementById('bell-badge');
   const bellPanel = document.getElementById('bell-panel');
@@ -87,6 +87,7 @@ export const setupMarketBell = (getData) => {
           category,
           session: inst.session,
           count: 0,
+          instrumentIds: [],
           startMin: Infinity,
           endMax: -Infinity,
           days: new Set(),
@@ -94,6 +95,7 @@ export const setupMarketBell = (getData) => {
           inOptimal: false,
         };
         market.count += 1;
+        market.instrumentIds.push(inst.id);
         market.inOptimal = market.inOptimal || isOptimalNow(inst, now);
         const active = activeTradingWindow(inst, now);
         if (active) {
@@ -138,7 +140,8 @@ export const setupMarketBell = (getData) => {
       .map(
         (market) => `
       <button class="bell-row" type="button" data-cat="${esc(market.category.id)}"
-        title="Filtrer : ${esc(market.name)}">
+          data-instruments="${esc(JSON.stringify(market.instrumentIds))}"
+          title="Filtrer : ${esc(market.name)}">
         <span class="bell-row-top">
           <span class="bell-row-name">${market.inOptimal ? '<span class="bell-optimal" title="Plage optimale en cours">●</span>' : ''}${esc(market.name)}</span>
           <span class="bell-row-count">${market.count} instrument${market.count > 1 ? 's' : ''}</span>
@@ -210,22 +213,14 @@ export const setupMarketBell = (getData) => {
     }
   });
 
-  // Un clic sur un marché sélectionne le filtre de catégorie correspondant.
+  // Un clic sélectionne uniquement les instruments comptés dans cette ligne.
   bellPanel.addEventListener('click', (event) => {
     const row = event.target.closest('.bell-row');
     if (!row) return;
     closePanel();
-    const search = document.getElementById('instrument-search');
-    if (search && search.value) {
-      search.value = '';
-      search.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    const select = document.getElementById('category-tabs');
     const categoryId = row.dataset.cat;
-    if (select && categoryId && select.value !== categoryId) {
-      select.value = categoryId;
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+    const instrumentIds = JSON.parse(row.dataset.instruments || '[]');
+    onMarketSelect({ categoryId, instrumentIds });
   });
 
   return update;

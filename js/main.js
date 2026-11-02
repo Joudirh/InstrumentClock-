@@ -21,6 +21,7 @@ const AppState = {
   category: 'all', // 'all' or category ID
   status: 'all', // 'all', 'open', 'closed'
   search: '', // free-text instrument search
+  marketInstrumentIds: null,
   optimalOnly: false, // show only instruments currently in their optimal window
   sortOptimal: false, // tri par plage optimale la plus proche de maintenant
   instrumentsPage: 1
@@ -47,7 +48,18 @@ const holidayNotice = document.getElementById('holiday-notice');
 const scrollTopBtn = document.getElementById('scroll-top');
 
 // Cloche "marchés ouverts" : compte, badge vert/rouge, hovertext et panneau déroulant.
-const updateMarketBell = setupMarketBell(() => AppData);
+const updateMarketBell = setupMarketBell(() => AppData, ({ categoryId, instrumentIds }) => {
+  AppState.category = categoryId;
+  AppState.marketInstrumentIds = new Set(instrumentIds.map(String));
+  AppState.search = '';
+  instrumentSearch.value = '';
+  AppState.status = 'all';
+  statusSelector.value = 'all';
+  AppState.optimalOnly = false;
+  optimalToggle.checked = false;
+  categoryTabs.value = categoryId;
+  renderAll(true);
+});
 const favoritesController = setupFavorites({
   container: instrumentsContainer,
   button: document.getElementById('favorites-button'),
@@ -216,6 +228,7 @@ const init = async () => {
   // Category dropdown filter
   categoryTabs.addEventListener('change', (e) => {
     AppState.category = e.target.value;
+    AppState.marketInstrumentIds = null;
     renderAll(true);
   });
 
@@ -301,7 +314,7 @@ const renderAll = (resetInstrumentsPage = false) => {
   renderCategoryFilters(categoryTabs, AppData.instrumentCategories, AppState.category);
   
   // 3. Render Instruments Grid
-  const pagination = renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal, AppState.instrumentsPage, favoritesController.getInstrumentIds());
+  const pagination = renderInstruments(instrumentsContainer, AppData.instrumentCategories, AppState.resolvedTimezone, AppState.season, AppState.category, AppState.status, AppState.search, AppState.optimalOnly, AppState.sortOptimal, AppState.instrumentsPage, favoritesController.getInstrumentIds(), AppState.marketInstrumentIds);
   AppState.instrumentsPage = pagination.currentPage;
   renderInstrumentPagination(instrumentsPagination, pagination.currentPage, pagination.totalPages);
   
