@@ -40,6 +40,7 @@ const statusSelector = document.getElementById('status-selector');
 const instrumentSearch = document.getElementById('instrument-search');
 const optimalToggle = document.getElementById('optimal-toggle');
 const sortOptimalBtn = document.getElementById('sort-optimal');
+const resetFiltersBtn = document.getElementById('reset-filters');
 const iconSun = document.getElementById('icon-sun');
 const iconMoon = document.getElementById('icon-moon');
 const clockTime = document.getElementById('clock-time');
@@ -227,6 +228,7 @@ const init = async () => {
   statusSelector.addEventListener('change', handleStatusChange);
   optimalToggle.addEventListener('change', handleOptimalChange);
   sortOptimalBtn.addEventListener('click', handleSortOptimal);
+  resetFiltersBtn.addEventListener('click', handleResetFilters);
   themeToggle.addEventListener('click', handleThemeToggle);
   instrumentSearch.addEventListener('input', debounce((e) => {
     AppState.search = e.target.value.trim();
@@ -304,6 +306,24 @@ const handleSortOptimal = () => {
   AppState.sortOptimal = !AppState.sortOptimal;
   sortOptimalBtn.classList.toggle('active', AppState.sortOptimal);
   sortOptimalBtn.setAttribute('aria-pressed', String(AppState.sortOptimal));
+  renderAll(true);
+};
+
+const handleResetFilters = () => {
+  AppState.category = 'all';
+  AppState.status = 'all';
+  AppState.search = '';
+  AppState.marketInstrumentIds = null;
+  AppState.optimalOnly = false;
+  AppState.sortOptimal = false;
+  AppState.favoritesOnly = false;
+
+  categoryTabs.value = 'all';
+  statusSelector.value = 'all';
+  instrumentSearch.value = '';
+  optimalToggle.checked = false;
+  sortOptimalBtn.classList.remove('active');
+  sortOptimalBtn.setAttribute('aria-pressed', 'false');
   renderAll(true);
 };
 

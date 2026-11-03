@@ -909,6 +909,10 @@ select:focus {
     order: 7;
   }
 
+  .reset-filters-btn {
+    order: 8;
+  }
+
   .category-filter,
   .status-filter,
   .sort-btn,
@@ -2136,6 +2140,32 @@ footer {
   font-family: inherit;
   cursor: pointer;
   transition: var(--transition);
+}
+
+.reset-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--bg-color-card);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.reset-filters-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.reset-filters-btn svg {
+  flex-shrink: 0;
 }
 
 .sort-btn:hover {
