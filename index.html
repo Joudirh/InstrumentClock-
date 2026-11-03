@@ -109,17 +109,6 @@
         </select>
       </div>
 
-      <button id="sort-optimal" class="sort-btn" type="button" aria-pressed="false"
-        title="Trier par plage optimale la plus proche de maintenant"
-        aria-label="Trier les instruments par plage optimale la plus proche">
-        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="m3 16 4 4 4-4"></path><path d="M7 20V4"></path>
-          <path d="M11 4h10"></path><path d="M11 8h7"></path><path d="M11 12h4"></path>
-        </svg>
-        <span class="sort-btn-label">Trier optimal</span>
-        <span class="sort-btn-label-short">Trier</span>
-      </button>
-      
       <div class="search-filter">
         <input id="instrument-search" type="search" placeholder="Rechercher un instrument…" aria-label="Rechercher un instrument" autocomplete="off">
       </div>
@@ -138,6 +127,16 @@
         <span class="toggle-label">Heures optimales</span>
         <span class="toggle-label-short">Optimal</span>
       </label>
+
+      <button id="sort-optimal" class="sort-btn" type="button" aria-pressed="false"
+        title="Trier par plage optimale la plus proche de maintenant"
+        aria-label="Trier les instruments par plage optimale la plus proche">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m3 16 4 4 4-4"></path><path d="M7 20V4"></path>
+          <path d="M11 4h10"></path><path d="M11 8h7"></path><path d="M11 12h4"></path>
+        </svg>
+        <span>Trier Optimal</span>
+      </button>
 
       <div class="bell-filter" id="bell-filter">
         <button id="market-bell" class="bell-button" type="button" title="Chargement…" aria-label="Marchés ouverts : chargement" aria-expanded="false" aria-haspopup="true">
@@ -163,7 +162,6 @@
           <path d="M4 4h16l-6.5 7.5v5L10.5 19v-7.5L4 4Z"></path>
           <path d="m17 14 4 4m0-4-4 4"></path>
         </svg>
-        <span>Réinitialiser</span>
       </button>
     </div>
 

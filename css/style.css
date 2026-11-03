@@ -827,7 +827,7 @@ select:focus {
 .filters-bar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -872,9 +872,10 @@ select:focus {
 @media (max-width: 767px) {
   .filters-bar {
     display: flex;
-    flex-wrap: wrap;
-    align-items: stretch;
+    flex-wrap: nowrap;
+    align-items: center;
     gap: 0.5rem;
+    overflow-x: auto;
   }
 
   .filters-bar > * {
@@ -890,11 +891,11 @@ select:focus {
   }
 
   .sort-btn {
-    order: 3;
+    order: 4;
   }
 
   .optimal-filter {
-    order: 4;
+    order: 3;
   }
 
   .search-filter {
@@ -917,11 +918,12 @@ select:focus {
   .status-filter,
   .sort-btn,
   .optimal-filter {
-    flex: 1 1 calc(50% - 0.25rem);
+    flex: 0 0 auto;
   }
 
   .search-filter {
-    flex: 1 1 0;
+    flex: 1 1 100px;
+    min-width: 100px;
   }
 
   .bell-filter {
@@ -2113,8 +2115,9 @@ footer {
   margin-right: 4px;
 }
 
-@media (max-width: 640px) {
-  .bell-panel {
+@media (max-width: 767px) {
+  .bell-panel,
+  .favorites-panel {
     position: fixed;
     top: auto;
     bottom: 12px;
@@ -2181,20 +2184,6 @@ footer {
 
 .sort-btn svg {
   flex-shrink: 0;
-}
-
-.sort-btn-label-short {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .sort-btn-label {
-    display: none;
-  }
-
-  .sort-btn-label-short {
-    display: inline;
-  }
 }
 
 /* --- Espace utilisateur (/account) --- */
